@@ -7,7 +7,9 @@ parser = argparse.ArgumentParser(description="Determine the best value for a \
     given program based on execution time.")
 
 parser.add_argument("name", help="What to name this cluster.")
-parser.add_argument("length", type=int, help="Job execution time, in hours.")
+parser.add_argument("length", type=int, help="Job execution time, on one " + \
+    "brain in hours on a neuron-class machine (adrc, tpp, panuc), " + \
+    "single-threaded")
 parser.add_argument("num", type=int, help="How many jobs you have.", default=1)
 parser.add_argument("size", type=int, 
     help="Estimate how large the volume needs to be, in GB.")
@@ -31,6 +33,9 @@ elif args.bedpostx:
 elif args.probtrackx:
 	program="probtrackx"
 elif args.neurosim:
-	program="neurosim"
+    program="neurosim"
 
-print(best_price(program))
+if args.bedpostx or args.probtrackx:
+   print(best_price(program, args.length, args.num, gpu=True))
+else:
+    print(best_price(program, args.length, args.num))
