@@ -52,7 +52,6 @@ args = parser.parse_args()
 
 if args.verbose:
     print(args)
-    args.show_all = True
 
 # if args.all:
 #     args.quickest = True
@@ -78,12 +77,8 @@ else:
     # freesurfer/neurosim: don't use gpu 
     gpu = False
 
-# print args if verbose is on
-if args.verbose:
-    print(args)
-
 # show all if -s or -S is set
-if args.show_all or args.show_all_only:
+if args.show_all or args.show_all_only or args.verbose:
     showall=True
 else:
     showall=False

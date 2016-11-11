@@ -29,3 +29,10 @@ From Bash, access the estimator through `price.sh`:
 `price_instances.py` - Contains the methods for pricing individual machine/region combinations, and for choosing the cheapest one given parameters.
 
 `instance_concurrency` - Contains info about parallelizability per cores (!`g2.*`) and per GPU instances.
+
+## Tips
+
+Use `sort -gk n,n` to sort results by the `n`th column. 
+
+ * `-g`     Lexical sort numbers (i.e *1, 2, 10, 101*)
+ * `-k n,n` Sort by column *n*.
