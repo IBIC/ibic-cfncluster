@@ -10,14 +10,14 @@ import re
 from datetime import datetime, date, time, timedelta
 
 
-instances = ['m4.large', 'm4.xlarge', 'c4.xlarge', 'c4.8xlarge'
+instances = ['m4.large', 'm4.xlarge', 'c4.xlarge', 'c4.8xlarge',
              #            'm3.medium','m3.large','m3.xlarge','m3.2xlarge',
-             #            'm4.large','m4.xlarge','m4.2xlarge','m4.4xlarge','m4.10xlarge',
+                         'm4.large','m4.xlarge','m4.2xlarge','m4.4xlarge','m4.10xlarge',
              #            'r3.large','r3.xlarge','r3.2xlarge','r3.4xlarge','r3.8xlarge',
              #            'x1.4xlarge','x1.8xlarge','x1.16xlarge','x1.32xlarge',
              #            'i2.xlarge','i2.2xlarge','i2.4xlarge','i2.8xlarge',
              #            'c3.large','c3.xlarge','c3.2xlarge','c3.4xlarge','c3.8xlarge',
-             #            'c4.large','c4.xlarge','c4.2xlarge','c4.4xlarge','c4.8xlarge',
+                         'c4.large','c4.xlarge','c4.2xlarge','c4.4xlarge','c4.8xlarge',
              #            'cc1.4xlarge',
              #            'g2.2xlarge','g2.8xlarge',
              #            'd2.xlarge','d2.2xlarge','d2.4xlarge','d2.8xlarge']
@@ -25,7 +25,8 @@ instances = ['m4.large', 'm4.xlarge', 'c4.xlarge', 'c4.8xlarge'
 
 gpu_instances = ['g2.2xlarge', 'g2.8xlarge']
 
-regions = ['us-east-1', 'us-west-2', 'us-west-1' , 'eu-west-1'] #, 'eu-central-1',
+regions = ['us-east-1']
+# ['us-east-1', 'us-west-2', 'us-west-1' , 'eu-west-1'] #, 'eu-central-1',
            #'ap-southeast-1', 'ap-northeast-1', 'ap-southeast-2',
            #'ap-northeast-2', 'ap-south-1', 'sa-east-1']
 
@@ -53,7 +54,7 @@ with open("instance_concurrency") as f:
        (key, val) = line.split(None)
        ncpus[key] = int(val)
 
-def get_all_in_region(region, gpu, program):
+def get_all_in_region(region, gpu):
     if gpu:
         all_instances = instances + gpu_instances
     else:
@@ -78,13 +79,14 @@ def get_all_in_region(region, gpu, program):
 
     return(prices)
 
-def get_all_regions(gpu, program):
+def get_all_regions(gpu):
     all_prices = np.empty([0, 3])
     
     for r in regions:
-        mat = get_all_in_region(r, gpu, program)
+        mat = get_all_in_region(r, gpu)
         all_prices = np.append(all_prices, mat, axis=0)
 
+    # print(*all_prices, sep='\n')
     return(all_prices)
 
 
@@ -110,15 +112,15 @@ def get_all_regions(gpu, program):
 
 #     return([instancename, region, price])
 
-def make_a_cluster(row, num, length, program):
+def make_a_cluster(row, num, length):
 
     cores = ncpus[row[0]]
     price = float(row[1])
     machines = int(math.ceil(num / cores))
 
 
-    if re.match("^g", row[0]):
-        length /= gpu_speed_up[program]
+    # if re.match("^g", row[0]):
+    #     length /= gpu_speed_up[program]
         # print("GPU speed up is " + str(gpu_speed_up[program]))
 
     total_cost = machines * length * price
@@ -177,16 +179,17 @@ def spaces(this_list, tnl=False):
     if(tnl):
         print("")
 
-def get_best_cluster(num, length, gpu, program, showall=False, text=False,
+def get_best_cluster(num, length, gpu, showall=False, text=False,
     showbest=True):
-    every = get_all_regions(gpu=gpu, program=program)
+    every = get_all_regions(gpu=gpu)
 
     if showall and showbest:
         spaces(header)
 
     maxprice = sys.maxint
+    minprice = 0
     for x in every:
-        price = make_a_cluster(x, num, length, program)
+        price = make_a_cluster(x, num, length)
 
         if showall:
             spaces(price)
@@ -194,6 +197,7 @@ def get_best_cluster(num, length, gpu, program, showall=False, text=False,
         if price[2] < maxprice:
             best = price
             maxprice = price[2]
+
 
     if showall and showbest:
         spaces(header, tnl=True)

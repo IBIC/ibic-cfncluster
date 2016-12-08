@@ -1,12 +1,16 @@
 #!/usr/bin/env Rscript
 # Scr
-if (!suppressPackageStartupMessages(require(argparse))) install.packages("argpa
-rse")
+if (!suppressPackageStartupMessages(require(argparse))) 
+  install.packages("argparse")
 suppressPackageStartupMessages(library(argparse))
 
 parser <- ArgumentParser()
-parser$add_argument("--gpu", action='store_true',help="Estimate cost for gpu instances")
-parser$add_argument("--hours",  nargs='?', default='0', type="integer", help="Number of vcpu hours",required=TRUE)
+parser$add_argument("--gpu", action='store_true', 
+                    help="Estimate cost for gpu instances")
+parser$add_argument("--hours",  nargs='?', default='0', type="integer", 
+                    help="Number of vcpu hours", required=TRUE)
+parser$add_argument("--num", nargs='?', default='1', type="integer",
+                    help="Number of jobs", required=TRUE)
 
 args <- parser$parse_args()
     
@@ -22,10 +26,14 @@ gpus=args$gpu
 ## Total number of hours for job estimate
 totalhours <- args$hours
 
+num <- args$num
+
 
 # download AWS pricing to obtain vcpu list
 tmpfile=tempfile()
-download.file("https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/current/index.csv", destfile=tmpfile,method="wget")
+download.file(paste0("https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/",
+                      "AmazonEC2/current/index.csv"), 
+              destfile=tmpfile, method="wget")
 
 # drop first five rows
 priceinfo <- read.csv(tmpfile,skip=5)
@@ -33,7 +41,8 @@ priceinfo <- read.csv(tmpfile,skip=5)
 if (!gpus) {
     priceinfo <- data.frame(priceinfo$Instance.Type, priceinfo$vCPU)
     colnames(priceinfo) <- c("instancetype", "vcpu")
-    vcpus <- aggregate(priceinfo$vcpu, by=list(priceinfo$instancetype), FUN=mean)
+    vcpus <- aggregate(priceinfo$vcpu, by=list(priceinfo$instancetype), 
+                       FUN=mean)
     colnames(vcpus) <- c("instancetype", "vcpu")
 } else {
     # if we are looking at gpus, we need the count of GPUs and not the vcpus
@@ -47,7 +56,8 @@ if (!gpus) {
 x <- data.frame(do.call(rbind,strsplit(levels(vcpus$instancetype), "\\.")))
 
 if (!gpus) {
-    x.subset <- subset(x, (X1=="m4"|X1=="c4") & levels(X1)[X1] != levels(X2)[X2])
+    x.subset <- subset(x, 
+                       (X1=="m4"|X1=="c4") & levels(X1)[X1] != levels(X2)[X2])
     instances <- paste(x.subset$X1, x.subset$X2, sep=".")
 } else {
     x.subset <- subset(x, (X1=="g2") & levels(X1)[X1] != levels(X2)[X2])
@@ -60,7 +70,13 @@ endtime <- Sys.time()
 # subtract 7 days
 starttime <- Sys.time() -7*60*60*24
 for (region in regions) { 
-    command <- paste("aws --region", region, "--output text ec2 describe-spot-price-history --instance-types", paste(instances,collapse=" "), "--start-time", "\"", starttime, "\"", "--end-time", "\"", endtime, "\"", "--product-descriptions", "Linux/UNIX >> ", spotpricingtmpfile)
+    command <- paste("aws --region", 
+                     region, 
+              "--output text ec2 describe-spot-price-history --instance-types", 
+                     paste(instances,collapse=" "), "--start-time", "\"", 
+                     starttime, "\"", "--end-time", "\"", endtime, "\"", 
+                     "--product-descriptions", "Linux/UNIX >> ", 
+                     spotpricingtmpfile)
     system(command)
 }
 
@@ -73,21 +89,50 @@ colnames(tab) <- c("region", "instancetype", "price")
 
 # merge vcpu with spot pricing
 merged <- merge(tab, vcpus, by="instancetype")
+
+
+merged$ninstances <- ceiling(num / merged$vcpu)
+
 # calculate price per vcpu/hour
-merged$ppvcpu <- merged$price/merged$vcpu
+#merged$ppvcpu <- merged$price #/merged$vcpu <- don't calculate by vcpu
 
+merged$totalprice <- merged$price * merged$ninstances
 
-minimum <- which.min(merged$ppvcpu)
-minimum.instancetype <- levels(merged$instancetype)[merged[minimum,]$instancetype]
-maximum <- which.max(merged$ppvcpu)
-maximum.instancetype <- levels(merged$instancetype)[merged[maximum,]$instancetype]
+# minimum <- which.min(merged$ppvcpu)
+# minimum.instancetype <- levels(merged$instancetype)[
+#   merged[minimum, ]$instancetype]
+# 
+# maximum <- which.max(merged$ppvcpu)
+# maximum.instancetype <- levels(merged$instancetype)[
+#   merged[maximum, ]$instancetype]
 
-cat("Minimum cost per vcpu or gpu is instancetype", minimum.instancetype, "at price per vcpu $", merged[minimum,]$ppvcpu, "\n")
-cat("Maximum cost per vcpu or gpu is instancetype", maximum.instancetype, "at price per vcpu $", merged[maximum,]$ppvcpu, "\n")
+# cat("Minimum cost per vcpu or gpu is instancetype", minimum.instancetype, 
+#     "at price per vcpu $", merged[minimum,]$ppvcpu, "\n")
+# cat("Maximum cost per vcpu or gpu is instancetype", maximum.instancetype, 
+#     "at price per vcpu $", merged[maximum,]$ppvcpu, "\n")
+
+minimum <- which.min(merged$totalprice)
+minimum.instancetype <- levels(merged$instancetype)[
+  merged[minimum, ]$instancetype]
+
+maximum <- which.max(merged$totalprice)
+maximum.instancetype <- levels(merged$instancetype)[
+  merged[maximum, ]$instancetype]
+
+print(merged)
+
+cat("Minimum cost per instance is instancetype", minimum.instancetype,
+   "at price $", merged$price[minimum], "/hr\n")
+cat("Maximum cost per instance is instancetype", maximum.instancetype,
+   "at price $", merged$price[maximum], "/hr\n")
 
 if (totalhours > 0) {
-    cat("Minimum cost estimate $",  merged[minimum,]$ppvcpu*totalhours, "\n")
-    cat("Maximum cost estimate $", merged[maximum,]$ppvcpu*totalhours, "\n")
+    # cat("Minimum cost estimate $",  merged[minimum,]$ppvcpu*totalhours, "\n")
+    # cat("Maximum cost estimate $", merged[maximum,]$ppvcpu*totalhours, "\n")
+  cat("Minimum total cost estimate $", merged$totalprice[minimum], 
+      "(", merged$ninstances[minimum], ") instances\n")
+  cat("Maximum total cost estimate $", merged$totalprice[maximum], "(", 
+      merged$ninstances[maximum], ") instances\n")
 }
 
 
