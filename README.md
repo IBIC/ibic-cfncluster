@@ -1,38 +1,29 @@
 # AWS-Estimator
-Tool for estimating execution time and cost on Amazon Web Services.
 
-## Using AWS-estimator
+There are two programs in this project, written in Python and R respectively, designed to come up with the cheapest way for you to run neuroimaging  projects on Amazon Web Services ("in the cloud").
 
-From Bash, access the estimator through `price.sh`:
+Both do fundamentally the same thing, but just go about it slightly different ways on the backend. You can use whichever you are more comfortable with.
 
-    ./price.sh [-h] [-sSvnp] (-F | -B | -P | -N) length num
+Each takes two arguments: 
 
-### Required Arguments:
+ + The length of time (in hours) it takes to complete a pipeline on a single 
+ brain, on a neuron-class machine or equivalent.
+ + The number of jobs (brains) you have.
 
- * `(-F | -B | -P | -N)` - Programs that can be estimated: **F**reesurfer, **b**edpostx, **p**robtrackx, **n**eurosim.
- * `length` - Length of a normal job, **in hours.**
- * `num` - Number of jobs
+More information about each program can be found in their respective READMEs, but basic usage is also documented here.
 
-### Flags:
+## Python
+(Trevor K. McAllister-Day)
 
- * `-s/--show-all`      Show the price, etc. for all clusters evaluated.
- * `-S/--show-all-only` Show just the price, etc. for all clusters evaluated; better for grepping, etc. 
- * `-v/--verbose`       Be more verbose, also turns on `--show-all`
- * `-n/--no-gpus`       Do not evaluate GPU instances (for `*x` programs only.)
- * `-p/--plaintext`     Show results in plain English, helpful if you aren't sure how to parse the regular output.
- 
+Basic usage:
 
-## Files
+    ./price.sh [--no-gpus] <hours> <N>
 
-`price.sh` - Bash interface for underlying scripts, has the parser, etc.
+`price.sh` also has options for modifying the output: `--show-all`, `--show-all-only`, `--verbose`, and `--plaintext`.
 
-`price_instances.py` - Contains the methods for pricing individual machine/region combinations, and for choosing the cheapest one given parameters.
+## R
+(Tara Madhyastha)
 
-`instance_concurrency` - Contains info about parallelizability per cores (!`g2.*`) and per GPU instances.
+Usage:
 
-## Tips
-
-Use `sort -gk n,n` to sort results by the `n`th column. 
-
- * `-g`     Lexical sort numbers (i.e *1, 2, 10, 101*)
- * `-k n,n` Sort by column *n*.
+    ./get-spot-estimate [--gpu] --hours H --num N
