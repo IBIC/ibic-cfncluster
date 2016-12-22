@@ -53,7 +53,7 @@ if (!gpus) {
 }
 
 ## obtain all M4 and C4 instances
-x <- data.frame(do.call(rbind,strsplit(levels(vcpus$instancetype), "\\.")))
+x <- data.frame(do.call(rbind, strsplit(levels(vcpus$instancetype), "\\.")))
 
 if (!gpus) {
     x.subset <- subset(x, 
@@ -71,8 +71,9 @@ endtime <- Sys.time()
 starttime <- Sys.time() -7*60*60*24
 for (region in regions) { 
     command <- paste("aws --region", 
-                     region, 
-              "--output text ec2 describe-spot-price-history --instance-types", 
+                     region,
+                     "--output text ec2 describe-spot-price-history",
+                     "--instance-types", 
                      paste(instances,collapse=" "), "--start-time", "\"", 
                      starttime, "\"", "--end-time", "\"", endtime, "\"", 
                      "--product-descriptions", "Linux/UNIX >> ", 
