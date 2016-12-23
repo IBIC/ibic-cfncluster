@@ -10,12 +10,12 @@ From Bash, access the estimator through `price.sh`:
 
     ./price.sh [-h] [-sSvgp] length num
 
-### Required Arguments:
+### Required Arguments
 
- * `length` - Estimate of job length, **in hours.**
- * `num` - Number of jobs
+ * `length`     Number of hours you expect your job to take (on average) on the appropriate instance.
+ * `num`        How many jobs (brains) you have to execute.
 
-### Flags:
+### Flags
 
  * `-s/--show-all`      Show the price, etc. for all clusters evaluated.
  * `-S/--show-all-only` Show just the price, etc. for all clusters evaluated; better for grepping, etc. 

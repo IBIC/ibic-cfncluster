@@ -35,9 +35,6 @@ five_days = timedelta(5)
 now = datetime.now()
 five_days_ago = now - five_days
 
-# Experimentally determined speed up times.
-gpu_speed_up = {"bedpostx": 161, "probtrackx": 14.9}
-
 # Get the number of cpus per instance from a text file
 ncpus = {}
 
@@ -83,7 +80,7 @@ def get_all_regions(gpu):
         mat = get_all_in_region(r, gpu)
         all_prices = np.append(all_prices, mat, axis=0)
 
-    # print(*all_prices, sep='\n')
+    print(*all_prices, sep='\n')
     return(all_prices)
 
 
@@ -101,7 +98,6 @@ def make_a_cluster(row, num, length):
     total_cost = machines * length * price
 
     return([row[0], row[2], total_cost, machines, length, price, cores])
-
 
 
 def spaces(this_list, tnl=False):
