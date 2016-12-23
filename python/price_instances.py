@@ -109,6 +109,11 @@ def spaces(this_list, tnl=False):
 
     list_s = [str(x) for x in this_list]
 
+    # total price
+    list_s[2] = format(float(list_s[2]), '.3f')
+    # $/hr
+    list_s[5] = format(float(list_s[5]), '.6f')
+
     print('\t'.join(list_s))
 
     if(tnl):
@@ -151,6 +156,8 @@ def get_best_cluster(num, length, gpu, showall=False, text=False,
     maxprice = sys.maxint
     minprice = 0
 
+    best = None
+
     for x in iXaz:
         mean_cost = x[1]
 
@@ -163,7 +170,6 @@ def get_best_cluster(num, length, gpu, showall=False, text=False,
             if price[2] < maxprice:
                 best = price
                 maxprice = price[2]
-
 
     if showall and showbest:
         spaces(header, tnl=True)
