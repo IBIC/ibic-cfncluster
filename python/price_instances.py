@@ -6,6 +6,7 @@ import numpy as np
 import sys
 import math
 import re
+import itertools
 
 from datetime import datetime, date, time, timedelta
 
@@ -80,22 +81,24 @@ def get_all_regions(gpu):
         mat = get_all_in_region(r, gpu)
         all_prices = np.append(all_prices, mat, axis=0)
 
-    print(*all_prices, sep='\n')
+    # print(*all_prices, sep='\n')
     return(all_prices)
 
 
-def make_a_cluster(row, num, length):
+def make_a_cluster(row, price, num, length):
     """Make a cluster based on how many jobs there are"""
 
     cores = ncpus[row[0]]
-    price = float(row[1])
     machines = int(math.ceil(num / cores))
 
     # if re.match("^g", row[0]):
     #     length /= gpu_speed_up[program]
         # print("GPU speed up is " + str(gpu_speed_up[program]))
 
-    total_cost = machines * length * price
+    if price is not None:
+        total_cost = machines * length * float(price)
+    else:
+        total_cost = None
 
     return([row[0], row[2], total_cost, machines, length, price, cores])
 
@@ -111,27 +114,55 @@ def spaces(this_list, tnl=False):
     if(tnl):
         print("")
 
+def accumulate(array):
+    """Get the average price of instances x AZs"""
+
+    instances = list(set(array[:,0]))
+    azones = list(set(array[:,2]))
+
+    permute = np.array(list(itertools.product(*[instances, azones])))
+
+    results = np.zeros([0, 3])
+
+    for row in permute:
+        subset = array[(array[:,0] == row[0]) & (array[:,2] == row[1])]
+        vals_f = [float(x) for x in subset[:,1]]
+
+        if len(vals_f) > 0:
+            mean = sum(vals_f) / len(vals_f)
+        else:
+            mean = None
+
+        results = np.append(results, [[row[0], mean, row[1]]], axis=0)
+
+    return(results)
 
 def get_best_cluster(num, length, gpu, showall=False, text=False,
     showbest=True):
     """Compare all possible clusters to get the cheapest one."""
 
-    every = get_all_regions(gpu=gpu)
+    every = np.array(get_all_regions(gpu=gpu))
+
+    iXaz = accumulate(every)
 
     if showall and showbest:
         spaces(header)
 
     maxprice = sys.maxint
     minprice = 0
-    for x in every:
-        price = make_a_cluster(x, num, length)
 
-        if showall:
-            spaces(price)
+    for x in iXaz:
+        mean_cost = x[1]
 
-        if price[2] < maxprice:
-            best = price
-            maxprice = price[2]
+        if mean_cost is not None:
+            price = make_a_cluster(x, mean_cost, num, length)
+
+            if showall:
+                spaces(price)
+
+            if price[2] < maxprice:
+                best = price
+                maxprice = price[2]
 
 
     if showall and showbest:
