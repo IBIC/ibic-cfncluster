@@ -23,7 +23,7 @@ parser.add_argument("-S", "--show-all-only", action="store_true",
 parser.add_argument("-v", "--verbose", action="store_true",
     help="Be more verbose (turns on \`show all\')")
 
-parser.add_argument("-n", "--no-gpus", action="store_true",
+parser.add_argument("-g", "--gpu", action="store_true",
     help="Don't calculate for GPU instances.")
 
 parser.add_argument("-p", "--plaintext", action="store_true",
@@ -35,9 +35,6 @@ args = parser.parse_args()
 if args.verbose:
     print(args)
 
-# Use GPUs is no_gpus flag is not set
-search_gpus = not args.no_gpus
-
 # show all if -s or -S is set
 if args.show_all or args.show_all_only or args.verbose:
     show_all=True
@@ -45,7 +42,7 @@ else:
     show_all=False
 
 get_best_cluster(args.num, args.length,
-    gpu = search_gpus,
+    gpu = args.gpu,
     showall = show_all,
     text = args.plaintext,
     showbest = not args.show_all_only)

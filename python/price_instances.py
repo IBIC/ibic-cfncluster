@@ -51,7 +51,7 @@ def get_all_in_region(region, gpu):
     """Get the price of every instance in a single region."""
 
     if gpu:
-        all_instances = instances + gpu_instances
+        all_instances = gpu_instances
     else:
         all_instances = instances
 
@@ -108,10 +108,9 @@ def spaces(this_list, tnl=False):
     """Print the list spaces for each row.
     It isn't the prettiest, but it works for debug output"""
 
-    width = 80 // len(this_list)
-    fmt = "{:<" + str(width) + "}"
+    list_s = [str(x) for x in this_list]
 
-    print(''.join([fmt.format(x) for x in this_list]))
+    print('\t'.join(list_s))
 
     if(tnl):
         print("")
@@ -142,7 +141,7 @@ def get_best_cluster(num, length, gpu, showall=False, text=False,
     if showall and showbest:
         spaces(header, tnl=True)
 
-    fmt = '{:<12}{:<20}'
+    fmt = '{:<13}{:<20}'
 
     if showbest:
         for h,b in zip(header, best):
