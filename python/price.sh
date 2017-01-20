@@ -29,6 +29,8 @@ parser.add_argument("-g", "--gpu", action="store_true",
 parser.add_argument("-p", "--plaintext", action="store_true",
     help="Show results parsed into plain English.")
 
+parser.add_argument("-t", "--total", action="store_true",
+    help="Show the total cost for the cheapest configuration only.")
 
 args = parser.parse_args()
 
@@ -37,12 +39,18 @@ if args.verbose:
 
 # show all if -s or -S is set
 if args.show_all or args.show_all_only or args.verbose:
-    show_all=True
+    show_all = True
 else:
-    show_all=False
+    show_all = False
+
+if args.total or args.show_all_only:
+    show_best = False
+else:
+    show_best = True
 
 get_best_cluster(args.num, args.length,
     gpu = args.gpu,
     showall = show_all,
     text = args.plaintext,
-    showbest = not args.show_all_only)
+    showbest = show_best,
+    total = args.total)

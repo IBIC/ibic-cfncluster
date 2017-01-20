@@ -7,6 +7,9 @@ suppressPackageStartupMessages(library(argparse))
 parser <- ArgumentParser()
 parser$add_argument("--gpu", action='store_true',
                     help="Estimate cost for gpu instances")
+parser$add_argument("--total", action='store_true',
+                    help=paste("Display only the total cost for the cheapest",
+                    "configuration."))
 parser$add_argument("--hours",  nargs='?', default='0', type="integer",
                     help="Number of vcpu hours", required=TRUE)
 parser$add_argument("--num", nargs='?', default='1', type="integer",
@@ -14,6 +17,7 @@ parser$add_argument("--num", nargs='?', default='1', type="integer",
 
 args <- parser$parse_args()
 
+total.only = args$total
 
 ## define regions
 #regions <- c("us-east-1", "us-west-2", "us-west-1" , "eu-west-1")
@@ -31,9 +35,9 @@ num <- args$num
 
 # download AWS pricing to obtain vcpu list
 tmpfile=tempfile()
-download.file(paste0("https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/",
-                      "AmazonEC2/current/index.csv"),
-              destfile=tmpfile, method="wget")
+download.file(paste0("https://pricing.us-east-1.amazonaws.com/offers/v1.0/",
+                      "aws/AmazonEC2/current/index.csv"),
+              destfile=tmpfile, method="wget", quiet=total.only)
 
 # drop first five rows
 priceinfo <- read.csv(tmpfile,skip=5)
@@ -48,7 +52,8 @@ if (!gpus) {
     # if we are looking at gpus, we need the count of GPUs and not the vcpus
     priceinfo <- data.frame(priceinfo$Instance.Type, priceinfo$GPU)
     colnames(priceinfo) <- c("instancetype", "vcpu")
-    vcpus <- aggregate(priceinfo$vcpu, by=list(priceinfo$instancetype), FUN=mean)
+    vcpus <- aggregate(priceinfo$vcpu, by=list(priceinfo$instancetype),
+      FUN=mean)
     colnames(vcpus) <- c("instancetype", "vcpu")
 }
 
@@ -68,7 +73,7 @@ if (!gpus) {
 spotpricingtmpfile=tempfile()
 endtime <- Sys.time()
 # subtract 7 days
-starttime <- Sys.time() -7*60*60*24
+starttime <- Sys.time() - 7*60*60*24
 for (region in regions) {
     command <- paste0("aws --region ",
                      region,
@@ -81,16 +86,12 @@ for (region in regions) {
     system(command)
 }
 
-print(spotpricingtmpfile)
-
 
 dat <-read.table(spotpricingtmpfile)
 dat <- data.frame(dat$V2, dat$V3, dat$V5)
 colnames(dat) <- c("region", "instancetype", "price")
 tab <- aggregate(dat$price, by=list(dat$region, dat$instancetype), FUN=mean)
 colnames(tab) <- c("region", "instancetype", "price")
-
-print(dat)
 
 # merge vcpu with spot pricing
 merged <- merge(tab, vcpus, by="instancetype")
@@ -126,14 +127,14 @@ maximum <- which.max(merged$totalprice)
 maximum.instancetype <- levels(merged$instancetype)[
   merged[maximum, ]$instancetype]
 
-print(merged)
+if (!total.only) {
+  cat("Minimum cost per instance is instancetype", minimum.instancetype,
+     "at price $", merged$price[minimum], "/hr\n")
+  #cat("Maximum cost per instance is instancetype", maximum.instancetype,
+  #   "at price $", merged$price[maximum], "/hr\n")
+}
 
-cat("Minimum cost per instance is instancetype", minimum.instancetype,
-   "at price $", merged$price[minimum], "/hr\n")
-#cat("Maximum cost per instance is instancetype", maximum.instancetype,
-#   "at price $", merged$price[maximum], "/hr\n")
-
-if (totalhours > 0) {
+if (totalhours > 0 && !total.only)  {
     # cat("Minimum cost estimate $",  merged[minimum,]$ppvcpu*totalhours, "\n")
     # cat("Maximum cost estimate $", merged[maximum,]$ppvcpu*totalhours, "\n")
   cat("Minimum total cost estimate $", merged$totalprice[minimum],
@@ -142,7 +143,10 @@ if (totalhours > 0) {
 #      merged$ninstances[maximum], ") instances\n")
 }
 
-## clean up
+if (total.only) {
+  cat(merged$totalprice[minimum], fill=TRUE)
+}
 
+## clean up
 unlink(spotpricingtmpfile)
 unlink(tmpfile)

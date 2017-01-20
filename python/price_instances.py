@@ -143,7 +143,7 @@ def accumulate(array):
     return(results)
 
 def get_best_cluster(num, length, gpu, showall=False, text=False,
-    showbest=True):
+    showbest=True, total=False):
     """Compare all possible clusters to get the cheapest one."""
 
     every = np.array(get_all_regions(gpu=gpu))
@@ -186,3 +186,6 @@ def get_best_cluster(num, length, gpu, showall=False, text=False,
             " hours each on " + str(best[4]) + " " + best[0] + \
             "-class instances in the " + best[1] + " region. " + \
             " It will cost you $" + str(round(best[2], 5)) + ".")
+
+    if total:
+        print(best[2])
