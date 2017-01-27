@@ -81,7 +81,11 @@ def get_all_regions(gpu):
         mat = get_all_in_region(r, gpu)
         all_prices = np.append(all_prices, mat, axis=0)
 
+<<<<<<< HEAD
     # print(*all_prices, sep='\n')
+=======
+    #print(*all_prices, sep='\n')
+>>>>>>> 529d73d7163ec8877baf4f9fdc87d210625c5bd8
     return(all_prices)
 
 
