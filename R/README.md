@@ -1,23 +1,23 @@
 # AWS-Estimator
 ## R version
-Tara Madhyastha
+by Tara Madhyastha
 
-Tool for estimating execution time and cost on Amazon Web Services.
+Tool for estimating execution time and cost on Amazon Web Services' Elastic Compute Cloud (EC2).
 
 ## Using `get_spot_estimate`
 
 `get_spot_estimate` is a Bash script, so it can be called directly from the command line with the following arguments:
 
-    ./get_spot_estimate [-h] [--gpu] --hours [HOURS] --num [NUM]
+    ./get_spot_estimate [-h] [--gpu] --hours [HOURS] --num [NUM_JOBS]
 
 ### Required Arguments
 
  + `--hours HOURS`      Number of hours you expect your job to take (on average) on the appropriate instance.
- + `--num NUM`          How many jobs (brains) you have to execute.
+ + `--num NUM_JOBS`     How many jobs (brains) you have to execute.
 
 ### Flags
 
- + `--gpu`              Evaluate GPU instances? 
+ + `--gpu`              Optional flag if you want the program to evaluate GPU instances.
 
 ## Example Usage 
 
@@ -34,4 +34,4 @@ Tool for estimating execution time and cost on Amazon Web Services.
     Minimum total cost estimate $ 0.07458855 ( 5 ) instances
     Maximum total cost estimate $ 0.5103859 ( 1 ) instances
 
-(`get_spot_estimate` will output messages related to pulling information from the Amazon API.)
+(`get_spot_estimate` will output messages similar to pulling information from the Amazon API.)
