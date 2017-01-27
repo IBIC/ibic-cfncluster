@@ -6,9 +6,9 @@ Tool for estimating execution time and cost on Amazon Web Services' Elastic Comp
 
 ## Using `get_spot_estimate`
 
-`get_spot_estimate` is a Bash script, so it can be called directly from the command line with the following arguments:
+`get_spot_estimate` is a R script, and it can be called directly from the command line with the following arguments:
 
-    ./get_spot_estimate [-h] [--gpu] --hours [HOURS] --num [NUM_JOBS]
+    Rscript ./get_spot_estimate [--gpu] --hours [HOURS] --num [NUM_JOBS]
 
 ### Required Arguments
 
