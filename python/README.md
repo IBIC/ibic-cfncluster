@@ -1,14 +1,16 @@
 # AWS-Estimator
 ## Python version
-Trevor K. McAllister-Day
+by Trevor K. McAllister-Day
 
-Tool for estimating execution time and cost on Amazon Web Services.
+Tool for estimating execution time and cost on Amazon Web Services' Elastic Compute Cloud (EC2).
 
-## Using `price.sh`
+## Using `price.py`
 
-From Bash, access the estimator through `price.sh`:
+From your terminal, access the estimator through `price.py`:
 
-    ./price.sh [-h] [-sSvgp] length num
+    python ./price.py [-h] [-sSvgp] length num
+
+*You will need to install the python package* **boto3** *if you do not have it. See https://github.com/boto/boto3.*
 
 ### Required Arguments
 
@@ -20,17 +22,16 @@ From Bash, access the estimator through `price.sh`:
  * `-s/--show-all`      Show the price, etc. for all clusters evaluated.
  * `-S/--show-all-only` Show just the price, etc. for all clusters evaluated; better for grepping, etc. 
  * `-v/--verbose`       Be more verbose, also turns on `--show-all`
- * `-g/--gpus`          Evaluate GPU instances (for tractography programs only.)
+ * `-g/--gpus`          Evaluate GPU instances (we recommend this for compute-intensive pipelines, such as tractography, only.)
  * `-p/--plaintext`     Show results in plain English, helpful if you aren't sure how to parse the regular output.
  
-
 ## Files
 
-`price.sh` - Bash interface for underlying scripts, has the parser, etc.
+`price.py` - Main Python script for estimating time and cost on AWS EC2.
 
-`price_instances.py` - Contains the methods for pricing individual machine/region combinations, and for choosing the cheapest one given parameters.
+`price_instances.py` - Contains the functions/methods for pricing individual machine/region combinations, and for choosing the cheapest one given parameters; called on by price.py.
 
-`instance_concurrency` - Contains info about parallelizability per cores (m4/c4)and per GPU instances (g2).
+`instance_concurrency` - Contains list of instance types and the number of vCPUs deployed for each instance.
 
 ## Tips
 
@@ -41,7 +42,7 @@ Use `sort -gk n,n` to sort results by the `n`th column.
 
 ## Example Usage
 
-    $ ./price.sh 100 9 
+    $ python ./price.py 100 9 
 
     instance    m4.large            
     region      us-east-1e          

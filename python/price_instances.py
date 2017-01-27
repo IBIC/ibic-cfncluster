@@ -1,4 +1,4 @@
-# Do float devision by default.
+# Do float division by default.
 from __future__ import division, print_function
 
 import boto3
@@ -18,29 +18,24 @@ instances = ['m4.large', 'm4.xlarge', 'c4.xlarge', 'c4.8xlarge',
 
 gpu_instances = ['g2.2xlarge', 'g2.8xlarge']
 
-regions = ['us-east-1']
-# ['us-east-1', 'us-west-2', 'us-west-1' , 'eu-west-1'] #, 'eu-central-1',
-           #'ap-southeast-1', 'ap-northeast-1', 'ap-southeast-2',
-           #'ap-northeast-2', 'ap-south-1', 'sa-east-1']
+regions = ['us-east-1', 'us-west-2', 'us-west-1' , 'eu-west-1', 'eu-central-1',
+           'ap-southeast-1', 'ap-northeast-1', 'ap-southeast-2',
+           'ap-northeast-2', 'ap-south-1', 'sa-east-1']
 
 # us-e1 N.Virginia; us-w2 Oregon; us-w1 N. California; eu-w1 Ireland;
 # eu-c1 Frankfurt; ap-se1 Singapore; ap-ne1 tokyo, ap-se2 Sydney, ap-ne2 Seoul;
 # ap-s1 Mumbai; sa-e1 Sao Paulo
 
-# header for printing results
-header=["instance", "region", "total-$", "num", "exec-time", "$/hr", "#cores"]
+header=["instance", "region", "total-$", "num-jobs", "exec-time", "$/hr", "#cores"]
 
-# Create five days ago datetime object.
 five_days = timedelta(5)
 now = datetime.now()
 five_days_ago = now - five_days
 
-# Get the number of cpus per instance from a text file
 ncpus = {}
 
 with open("instance_concurrency") as f:
     for line in f:
-       # print(line)
        (key, val) = line.split(None)
        ncpus[key] = int(val)
 
@@ -58,6 +53,7 @@ def get_all_in_region(region, gpu):
             StartTime=five_days_ago,
             EndTime=now,
             ProductDescriptions=['Linux/UNIX'],
+            #AvailabilityZone=region
         )
 
     prices = np.empty([0, 3])
@@ -80,7 +76,6 @@ def get_all_regions(gpu):
         mat = get_all_in_region(r, gpu)
         all_prices = np.append(all_prices, mat, axis=0)
 
-    #print(*all_prices, sep='\n')
     return(all_prices)
 
 
@@ -90,10 +85,6 @@ def make_a_cluster(row, num, length):
     cores = ncpus[row[0]]
     price = float(row[1])
     machines = int(math.ceil(num / cores))
-
-    # if re.match("^g", row[0]):
-    #     length /= gpu_speed_up[program]
-        # print("GPU speed up is " + str(gpu_speed_up[program]))
 
     total_cost = machines * length * price
 
@@ -124,6 +115,7 @@ def get_best_cluster(num, length, gpu, showall=False, text=False,
     maxprice = sys.maxint
     minprice = 0
     for x in every:
+
         price = make_a_cluster(x, num, length)
 
         if showall:
@@ -132,7 +124,6 @@ def get_best_cluster(num, length, gpu, showall=False, text=False,
         if price[2] < maxprice:
             best = price
             maxprice = price[2]
-
 
     if showall and showbest:
         spaces(header, tnl=True)
