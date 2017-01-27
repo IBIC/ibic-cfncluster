@@ -6,13 +6,10 @@ from price_instances import get_best_cluster # best_price
 parser = argparse.ArgumentParser(description="Determine the best value for a \
     given program based on execution time.")
 
-# parser.add_argument("name", help="What to name this cluster.")
 parser.add_argument("length", type=int, help="Job execution time, on one " + \
     "brain in hours on a neuron-class machine (adrc, tpp, panuc), " + \
     "single-threaded")
 parser.add_argument("num", type=int, help="How many jobs you have.", default=1)
-# parser.add_argument("size", type=int,
-#     help="Estimate how large the volume needs to be, in GB.")
 
 parser.add_argument("-s", "--show-all", action="store_true",
     help="Show info for all possible clusters.")

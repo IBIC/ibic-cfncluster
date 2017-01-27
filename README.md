@@ -1,6 +1,6 @@
 # AWS-Estimator
 
-There are two programs in this project, written in Python and R respectively, designed to come up with the cheapest way for you to run neuroimaging  projects on Amazon Web Services ("in the cloud").
+There are two programs in this project, written in Python and R respectively, designed to come up with the cheapest way for you to run neuroimaging  projects on Amazon Web Services' Elastic Compute Cloud ("in the cloud").
 
 Both do fundamentally the same thing, but just go about it slightly different ways on the backend. You can use whichever you are more comfortable with.
 
@@ -17,13 +17,13 @@ More information about each program can be found in their respective READMEs, bu
 
 Basic usage:
 
-    ./price.sh [--gpu] <hours> <N>
+    python ./price.py [--gpu] <hours> <num_jobs>
 
-`price.sh` also has options for modifying the output: `--show-all`, `--show-all-only`, `--verbose`, and `--plaintext`.
+`price.py` also has options for modifying the output: `--show-all`, `--show-all-only`, `--verbose`, and `--plaintext`.
 
 ## R
 (Tara Madhyastha)
 
 Usage:
 
-    ./get-spot-estimate [--gpu] --hours H --num N
+    ./get-spot-estimate [--gpu] --hours <hours> --num <num_jobs>
