@@ -49,5 +49,7 @@ get_best_cluster(args.num, args.length,
     gpu = args.gpu,
     showall = show_all,
     text = args.plaintext,
-    showbest = show_best,
-    total = args.total)
+    showbest = show_best)
+
+# ,
+#     total = args.total)

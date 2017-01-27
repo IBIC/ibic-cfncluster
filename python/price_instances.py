@@ -26,7 +26,8 @@ regions = ['us-east-1', 'us-west-2', 'us-west-1' , 'eu-west-1', 'eu-central-1',
 # eu-c1 Frankfurt; ap-se1 Singapore; ap-ne1 tokyo, ap-se2 Sydney, ap-ne2 Seoul;
 # ap-s1 Mumbai; sa-e1 Sao Paulo
 
-header=["instance", "region", "total-$", "num-jobs", "exec-time", "$/hr", "#cores"]
+header=["instance", "region", "total-$", "num-jobs", "exec-time", "$/hr",
+    "#cores"]
 
 five_days = timedelta(5)
 now = datetime.now()
