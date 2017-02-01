@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# Scr
+
 if (!suppressPackageStartupMessages(require(argparse)))
   install.packages("argparse")
 suppressPackageStartupMessages(library(argparse))
@@ -19,27 +19,26 @@ args <- parser$parse_args()
 
 total.only = args$total
 
-## define regions
-#regions <- c("us-east-1", "us-west-2", "us-west-1" , "eu-west-1")
-regions <- c("us-east-1")
+# Define AWS regions
+regions <- c("us-east-1", "us-west-2", "us-west-1" , "eu-west-1", "eu-central-1",
+           "ap-southeast-1", "ap-northeast-1", "ap-southeast-2",
+           "ap-northeast-2", "ap-south-1", "sa-east-1")
 
-## Price out cheapest GPUs if that's what we are doing
-# this will be set to true or false depending on the flag
+# Price out cheapest GPUs if flag is given
 gpus=args$gpu
 
-## Total number of hours for job estimate
 totalhours <- args$hours
-
 num <- args$num
 
-
-# download AWS pricing to obtain vcpu list
+# Download AWS pricing to obtain vcpu list
+cat("\n   Now downloading pricing list from AWS...\n\n")
 tmpfile=tempfile()
 download.file(paste0("https://pricing.us-east-1.amazonaws.com/offers/v1.0/",
                       "aws/AmazonEC2/current/index.csv"),
               destfile=tmpfile, method="wget", quiet=total.only)
+cat("   Please allow 4-5 minutes for this script to run.")
 
-# drop first five rows
+# Drop first five rows
 priceinfo <- read.csv(tmpfile,skip=5)
 
 if (!gpus) {
@@ -57,22 +56,20 @@ if (!gpus) {
     colnames(vcpus) <- c("instancetype", "vcpu")
 }
 
-## obtain all M4 and C4 instances
+# Obtain all M4 and C4 instances
 x <- data.frame(do.call(rbind, strsplit(levels(vcpus$instancetype), "\\.")))
-
 if (!gpus) {
-    x.subset <- subset(x,
-                       (X1=="m4"|X1=="c4") & levels(X1)[X1] != levels(X2)[X2])
+    x.subset <- subset(x,(X1=="m4"|X1=="c4") & levels(X1)[X1] != levels(X2)[X2])
     instances <- paste(x.subset$X1, x.subset$X2, sep=".")
 } else {
-    x.subset <- subset(x, (X1=="g2") & levels(X1)[X1] != levels(X2)[X2])
+    x.subset <- subset(x,(X1=="g2") & levels(X1)[X1] != levels(X2)[X2])
     instances <- paste(x.subset$X1, x.subset$X2, sep=".")
 }
 
-## get spot price history using instances identified
+# Get spot price history using instances identified
 spotpricingtmpfile=tempfile()
 endtime <- Sys.time()
-# subtract 7 days
+# Subtract 7 days
 starttime <- Sys.time() - 7*60*60*24
 for (region in regions) {
     command <- paste0("aws --region ",
@@ -86,38 +83,17 @@ for (region in regions) {
     system(command)
 }
 
-
 dat <-read.table(spotpricingtmpfile)
 dat <- data.frame(dat$V2, dat$V3, dat$V5)
 colnames(dat) <- c("region", "instancetype", "price")
 tab <- aggregate(dat$price, by=list(dat$region, dat$instancetype), FUN=mean)
 colnames(tab) <- c("region", "instancetype", "price")
 
-# merge vcpu with spot pricing
+# Merge vcpu with spot pricing
 merged <- merge(tab, vcpus, by="instancetype")
-
 merged$ninstances <- ceiling(num / merged$vcpu)
-
-# calculate price per vcpu/hour
-#merged$ppvcpu <- merged$price #/merged$vcpu <- don't calculate by vcpu
-
 merged$hours <- totalhours
-
 merged$totalprice <- merged$price * merged$ninstances * merged$hours
-
-
-# minimum <- which.min(merged$ppvcpu)
-# minimum.instancetype <- levels(merged$instancetype)[
-#   merged[minimum, ]$instancetype]
-#
-# maximum <- which.max(merged$ppvcpu)
-# maximum.instancetype <- levels(merged$instancetype)[
-#   merged[maximum, ]$instancetype]
-
-# cat("Minimum cost per vcpu or gpu is instancetype", minimum.instancetype,
-#     "at price per vcpu $", merged[minimum,]$ppvcpu, "\n")
-# cat("Maximum cost per vcpu or gpu is instancetype", maximum.instancetype,
-#     "at price per vcpu $", merged[maximum,]$ppvcpu, "\n")
 
 minimum <- which.min(merged$totalprice)
 minimum.instancetype <- levels(merged$instancetype)[
@@ -128,25 +104,18 @@ maximum.instancetype <- levels(merged$instancetype)[
   merged[maximum, ]$instancetype]
 
 if (!total.only) {
-  cat("Minimum cost per instance is instancetype", minimum.instancetype,
+  cat("\nHere are the results:")
+  cat("\nMinimum cost per instance will be EC2 instance-type", minimum.instancetype,
      "at price $", merged$price[minimum], "/hr\n")
-  #cat("Maximum cost per instance is instancetype", maximum.instancetype,
-  #   "at price $", merged$price[maximum], "/hr\n")
 }
-
 if (totalhours > 0 && !total.only)  {
-    # cat("Minimum cost estimate $",  merged[minimum,]$ppvcpu*totalhours, "\n")
-    # cat("Maximum cost estimate $", merged[maximum,]$ppvcpu*totalhours, "\n")
-  cat("Minimum total cost estimate $", merged$totalprice[minimum],
-      "(", merged$ninstances[minimum], ") instances\n")
-#  cat("Maximum total cost estimate $", merged$totalprice[maximum], "(",
-#      merged$ninstances[maximum], ") instances\n")
+  cat("\nMinimum total cost estimate is $", merged$totalprice[minimum],
+      "(for", merged$ninstances[minimum], "instances)\n")
 }
-
 if (total.only) {
   cat(merged$totalprice[minimum], fill=TRUE)
 }
 
-## clean up
+# Clean up
 unlink(spotpricingtmpfile)
 unlink(tmpfile)
