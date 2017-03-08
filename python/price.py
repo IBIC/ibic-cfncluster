@@ -6,10 +6,12 @@ from price_instances import get_best_cluster # best_price
 parser = argparse.ArgumentParser(description="Determine the best value for a \
     given program based on execution time.")
 
-parser.add_argument("length", type=int, help="Job execution time, on one " + \
-    "brain in hours on a neuron-class machine (adrc, tpp, panuc), " + \
-    "single-threaded")
-parser.add_argument("num", type=int, help="How many jobs you have.", default=1)
+parser.add_argument("-H", "--hours", type=int, required=True,
+    help="Job execution time, on one brain in hours on a neuron-class " + \
+    "machine (adrc, tpp, panuc), single-threaded. -H to not conflict with " + \
+    "help.")
+parser.add_argument("-n", "--num", type=int, required=True, help="How many, " +\
+    "jobs you have.", default=1)
 
 parser.add_argument("-s", "--show-all", action="store_true",
     help="Show info for all possible clusters.")
@@ -45,7 +47,7 @@ if args.total or args.show_all_only:
 else:
     show_best = True
 
-get_best_cluster(args.num, args.length,
+get_best_cluster(args.num, args.hours,
     gpu = args.gpu,
     showall = show_all,
     text = args.plaintext,
