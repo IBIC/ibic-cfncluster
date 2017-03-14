@@ -6,12 +6,16 @@ from price_instances import get_best_cluster # best_price
 parser = argparse.ArgumentParser(description="Determine the best value for a \
     given program based on execution time.")
 
-parser.add_argument("-H", "--hours", type=int, required=True,
+# Putting the required flag arguments into their own group stops them from
+## showing up under the confusing header "optional argumetnts"
+required_named = parser.add_argument_group("required named arguments")
+
+required_named.add_argument("-H", "--hours", type=int, required=True,
     help="Job execution time, on one brain in hours on a neuron-class " + \
     "machine (adrc, tpp, panuc), single-threaded. -H to not conflict with " + \
     "help.")
-parser.add_argument("-n", "--num", type=int, required=True, help="How many, " +\
-    "jobs you have.", default=1)
+required_named.add_argument("-n", "--num", type=int, required=True,
+    help="How many jobs you have.", default=1)
 
 parser.add_argument("-s", "--show-all", action="store_true",
     help="Show info for all possible clusters.")
@@ -20,7 +24,7 @@ parser.add_argument("-S", "--show-all-only", action="store_true",
     "configuration")
 
 parser.add_argument("-v", "--verbose", action="store_true",
-    help="Be more verbose (turns on \`show all\')")
+    help="Be more verbose (turns on `show all\')")
 
 parser.add_argument("-g", "--gpu", action="store_true",
     help="Don't calculate for GPU instances.")

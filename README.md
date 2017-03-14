@@ -4,7 +4,7 @@ There are two programs in this project, written in Python and R respectively, de
 
 Both do fundamentally the same thing, but just go about it slightly different ways on the backend. You can use whichever you are more comfortable with.
 
-Each takes two arguments and a switch: 
+Each takes (at minimum) two arguments and a switch: 
 
  + The length of time (in hours) you expect your job to take on the appropriate instance class (m4/c4 vs. g2).
  + The number of jobs (brains) you have.
@@ -17,7 +17,7 @@ More information about each program can be found in their respective READMEs, bu
 
 Basic usage:
 
-    python ./price.py [--gpu] <hours> <num_jobs>
+    ./price.py [--gpu] --hours HOURS --num NUM
 
 `price.py` also has options for modifying the output: `--show-all`, `--show-all-only`, `--verbose`, and `--plaintext`.
 
@@ -26,4 +26,4 @@ Basic usage:
 
 Usage:
 
-    ./get-spot-estimate [--gpu] --hours <hours> --num <num_jobs>
+    ./get-spot-estimate [--gpu] --hours HOURS --num NUM

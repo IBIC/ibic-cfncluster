@@ -35,7 +35,11 @@ five_days_ago = now - five_days
 
 ncpus = {}
 
-with open("instance_concurrency") as f:
+with open("../lib/instance_concurrency") as f:
+    # skip header line (for R)
+    next(f)
+
+    # read in data
     for line in f:
        (key, val) = line.split(None)
        ncpus[key] = int(val)
