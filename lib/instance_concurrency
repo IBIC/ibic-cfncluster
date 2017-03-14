@@ -1,6 +1,7 @@
+instancetype	vcpu
 cc2.8xlarge	32
 cg1.4xlarge	16
-t2.nano	    1
+t2.nano     1
 t2.micro	1
 t2.small	1
 t2.medium	2

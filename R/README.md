@@ -13,11 +13,13 @@ Tool for estimating execution time and cost on Amazon Web Services' Elastic Comp
 ### Required Arguments
 
  + `--hours HOURS`      Number of hours you expect your job to take (on average) on the appropriate instance.
- + `--num NUM_JOBS`     How many jobs (brains) you have to execute.
+ + `--num NUM`     How many jobs (brains) you have to execute.
 
 ### Flags
 
  + `--gpu`              Optional flag if you want the program to evaluate GPU instances.
+ + `--total`            Display only the total cost for the cheapest configuration.
+ + `--download`         Download the file containing instance configurations from the Internet instead of using `lib/instance_concurrency`
 
 ## Example Usage 
 

@@ -15,14 +15,17 @@ parser$add_argument("--hours",  nargs='?', default='0', type="integer",
 parser$add_argument("--num", nargs='?', default='1', type="integer",
                     help="Number of jobs", required=TRUE)
 
+parser$add_argument("--download", action='store_true',
+    help="Download index file.")
+
 args <- parser$parse_args()
 
 total.only = args$total
 
 # Define AWS regions
-regions <- c("us-east-1", "us-west-2", "us-west-1" , "eu-west-1", "eu-central-1",
-           "ap-southeast-1", "ap-northeast-1", "ap-southeast-2",
-           "ap-northeast-2", "ap-south-1", "sa-east-1")
+regions <- c("us-east-1", "us-west-2", "us-west-1" , "eu-west-1",
+            "eu-central-1", "ap-southeast-1", "ap-northeast-1",
+            "ap-southeast-2", "ap-northeast-2", "ap-south-1", "sa-east-1")
 
 # Price out cheapest GPUs if flag is given
 gpus=args$gpu
@@ -31,29 +34,39 @@ totalhours <- args$hours
 num <- args$num
 
 # Download AWS pricing to obtain vcpu list
-cat("\n   Now downloading pricing list from AWS...\n\n")
-tmpfile=tempfile()
-download.file(paste0("https://pricing.us-east-1.amazonaws.com/offers/v1.0/",
-                      "aws/AmazonEC2/current/index.csv"),
-              destfile=tmpfile, method="wget", quiet=total.only)
-cat("   Please allow 4-5 minutes for this script to run.")
+if(args$download) {
+    cat("\n   Now downloading pricing list from AWS...\n\n")
+    tmpfile=tempfile()
+    download.file(paste0("https://pricing.us-east-1.amazonaws.com/offers/v1.0/",
+                          "aws/AmazonEC2/current/index.csv"),
+                  destfile=tmpfile, method="wget", quiet=total.only)
+    cat("   Please allow 4-5 minutes for this script to run.")
 
-# Drop first five rows
-priceinfo <- read.csv(tmpfile,skip=5)
+      # Drop first five rows
+    priceinfo <- read.csv(tmpfile, skip=5)
 
-if (!gpus) {
-    priceinfo <- data.frame(priceinfo$Instance.Type, priceinfo$vCPU)
-    colnames(priceinfo) <- c("instancetype", "vcpu")
-    vcpus <- aggregate(priceinfo$vcpu, by=list(priceinfo$instancetype),
-                       FUN=mean)
-    colnames(vcpus) <- c("instancetype", "vcpu")
+    if (!gpus) {
+        priceinfo <- data.frame(priceinfo$Instance.Type, priceinfo$vCPU)
+        colnames(priceinfo) <- c("instancetype", "vcpu")
+        # vcpus <- aggregate(priceinfo$vcpu, by=list(priceinfo$instancetype),
+        #                    FUN=mean)
+        # colnames(vcpus) <- c("instancetype", "vcpu")
+        vcpus <- priceinfo
+    } else {
+        # if we are looking at gpus, we need the count of GPUs and not the vcpus
+        priceinfo <- data.frame(priceinfo$Instance.Type, priceinfo$GPU)
+        colnames(priceinfo) <- c("instancetype", "vcpu")
+        vcpus <- aggregate(priceinfo$vcpu, by=list(priceinfo$instancetype),
+          FUN=mean)
+        colnames(vcpus) <- c("instancetype", "vcpu")
+    }
+
+    print(head(vcpus))
+
 } else {
-    # if we are looking at gpus, we need the count of GPUs and not the vcpus
-    priceinfo <- data.frame(priceinfo$Instance.Type, priceinfo$GPU)
-    colnames(priceinfo) <- c("instancetype", "vcpu")
-    vcpus <- aggregate(priceinfo$vcpu, by=list(priceinfo$instancetype),
-      FUN=mean)
-    colnames(vcpus) <- c("instancetype", "vcpu")
+    vcpus <- read.table("../lib/instance_concurrency", header=TRUE)
+    # print(head(priceinfo))
+    # quit()
 }
 
 # Obtain all M4 and C4 instances
@@ -105,8 +118,8 @@ maximum.instancetype <- levels(merged$instancetype)[
 
 if (!total.only) {
   cat("\nHere are the results:")
-  cat("\nMinimum cost per instance will be EC2 instance-type", minimum.instancetype,
-     "at price $", merged$price[minimum], "/hr\n")
+  cat("\nMinimum cost per instance will be EC2 instance-type",
+      minimum.instancetype, "at price $", merged$price[minimum], "/hr\n")
 }
 if (totalhours > 0 && !total.only)  {
   cat("\nMinimum total cost estimate is $", merged$totalprice[minimum],
@@ -118,4 +131,7 @@ if (total.only) {
 
 # Clean up
 unlink(spotpricingtmpfile)
-unlink(tmpfile)
+
+if (args$download){
+  unlink(tmpfile)
+}
