@@ -14,6 +14,8 @@ parser$add_argument("--hours",  nargs='?', default='0', type="integer",
                     help="Number of vcpu hours", required=TRUE)
 parser$add_argument("--num", nargs='?', default='1', type="integer",
                     help="Number of jobs", required=TRUE)
+parser$add_argument("--verbose", action='store_true',
+                    help=paste("Display more information about script."))
 
 parser$add_argument("--download", action='store_true',
     help="Download index file.")
@@ -64,9 +66,11 @@ if(args$download) {
     print(head(vcpus))
 
 } else {
-    vcpus <- read.table("../lib/instance_concurrency", header=TRUE)
-    # print(head(priceinfo))
-    # quit()
+  if (args$verbose)
+    cat("Reading from file ...")
+  vcpus <- read.table("../lib/instance_concurrency", header=TRUE)
+  # print(head(priceinfo))
+  # quit()
 }
 
 # Obtain all M4 and C4 instances
@@ -79,20 +83,34 @@ if (!gpus) {
     instances <- paste(x.subset$X1, x.subset$X2, sep=".")
 }
 
+if (args$verbose)
+  cat("Getting spot price history ...")
+
 # Get spot price history using instances identified
 spotpricingtmpfile=tempfile()
 endtime <- Sys.time()
 # Subtract 7 days
 starttime <- Sys.time() - 7*60*60*24
+
+if (args$verbose)
+  cat(paste("# regions:", length(regions)), fill=TRUE)
+
 for (region in regions) {
+    if (args$verbose)
+      cat(paste("Working on region", region), fill=TRUE)
+
     command <- paste0("aws --region ",
                      region,
                      " --output text ec2 describe-spot-price-history ",
-                     " --instance-types ",
-                     paste(instances, collapse=" "), " --start-time '",
-                     starttime, "' --end-time '", endtime, "' ",
+                     " --instance-types ", paste(instances, collapse=" "),
+                     " --start-time '", starttime,
+                     "' --end-time '", endtime, "' ",
                      "--product-descriptions Linux/UNIX >> ",
                      spotpricingtmpfile)
+
+    # if (args$verbose)
+    #   cat(command, fill=TRUE)
+
     system(command)
 }
 
@@ -101,6 +119,9 @@ dat <- data.frame(dat$V2, dat$V3, dat$V5)
 colnames(dat) <- c("region", "instancetype", "price")
 tab <- aggregate(dat$price, by=list(dat$region, dat$instancetype), FUN=mean)
 colnames(tab) <- c("region", "instancetype", "price")
+
+if (args$verbose)
+  cat("Merge vcpu with spot pricing ...")
 
 # Merge vcpu with spot pricing
 merged <- merge(tab, vcpus, by="instancetype")
