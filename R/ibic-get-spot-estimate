@@ -5,7 +5,7 @@ if (!suppressPackageStartupMessages(require(argparse)))
 suppressPackageStartupMessages(library(argparse))
 
 parser <- ArgumentParser()
-parser$add_argument("--gpu", action='store_true',
+parser$add_argument("-g", "--gpu", action='store_true',
                     help="Estimate cost for gpu instances")
 parser$add_argument("--total", action='store_true',
                     help=paste("Display only the total cost for the cheapest",
@@ -66,11 +66,32 @@ if(args$download) {
     print(head(vcpus))
 
 } else {
+
+  print(Sys.getenv("IBICCFNCLUSTERLIB"))
+
+  # Check whether library is set
+  if (Sys.getenv("IBICCFNCLUSTERLIB") == "")
+  {
+    cat("Warning: Environment variable IBICCFNCLUSTERLIB unset.
+      Using default library.", fill=TRUE)
+    lib="../lib/"
+  } else {
+    lib=Sys.getenv("IBICCFNCLUSTERLIB")
+  }
+
+  # Check if instance concurrency file exists in set lib.
+  conc.file=paste0(lib, "/instance_concurrency")
+  if (!file.exists(conc.file))
+  {
+    cat("Error: instance_concurrency file does not exist in directory",
+      "specified (", lib, "). Please reset IBICCFNCLUSTERLIB if necessary.",
+      "Exiting.")
+    quit(1)
+  }
   if (args$verbose)
-    cat("Reading from file ...")
+    cat("Reading from file", conc.file, fill=TRUE)
+
   vcpus <- read.table("../lib/instance_concurrency", header=TRUE)
-  # print(head(priceinfo))
-  # quit()
 }
 
 # Obtain all M4 and C4 instances

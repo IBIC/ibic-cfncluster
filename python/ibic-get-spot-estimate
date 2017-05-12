@@ -13,6 +13,7 @@ import numpy as np
 import sys
 import math
 import re
+import os
 
 # import time functions
 from datetime import datetime, date, time, timedelta
@@ -44,7 +45,21 @@ five_days_ago = now - five_days
 
 ncpus = {}
 
-with open("../lib/instance_concurrency") as f:
+# Get lib directory from environment, or choose default if unset.
+if os.getenv("IBICCFNCLUSTERLIB") is None:
+    print("Warning: Environment variable IBICCFNCLUSTERLIB unset.\
+            Using default library (../lib).")
+    LIB="../lib/"
+else:
+    LIB=os.getenv("IBICCFNCLUSTERLIB")
+
+# Make sure instance concurrency file exists before going any farther.
+if not os.path.isfile(LIB + "/instance_concurrency"):
+    print("instance_concurrency file does not exist in library specified (" +
+        LIB + "). Please reset IBICCFNCLUSTERLIB if necessary.")
+    sys.exit(1)
+
+with open(LIB + "/instance_concurrency") as f:
     # skip header line (for R)
     next(f)
 
