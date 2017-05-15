@@ -4,6 +4,8 @@ if (!suppressPackageStartupMessages(require(argparse)))
   install.packages("argparse")
 suppressPackageStartupMessages(library(argparse))
 
+post.args <- commandArgs(trailingOnly=TRUE)
+
 parser <- ArgumentParser()
 parser$add_argument("-g", "--gpu", action='store_true',
                     help="Estimate cost for gpu instances")
@@ -11,9 +13,9 @@ parser$add_argument("-t", "--total", action='store_true',
                     help=paste("Display only the total cost for the cheapest",
                     "configuration."))
 parser$add_argument("-H", "--hours",  nargs='?', default='0', type="integer",
-                    help="Number of vcpu hours", required=TRUE)
-parser$add_argument("-n", "--num", nargs='?', default='1', type="integer",
-                    help="Number of jobs", required=TRUE)
+                    help="Number of vcpu hours")
+parser$add_argument("-n", "--num", nargs='?', default='0', type="integer",
+                    help="Number of jobs")
 parser$add_argument("-v", "--verbose", action='store_true',
                     help=paste("Display more information about script."))
 
@@ -21,6 +23,17 @@ parser$add_argument("--download", action='store_true',
     help="Download index file.")
 
 args <- parser$parse_args()
+
+if (args$hours == 0 | args$num == 0 )
+{
+  parser$print_help()
+  stop("Both --hours and --num are required.")
+}
+else if (length(post.args==0))
+{
+  parser$print_help()
+  stop("No arguments supplied.")
+}
 
 total.only = args$total
 
@@ -86,7 +99,7 @@ if(args$download) {
     cat("Error: instance_concurrency file does not exist in directory",
       "specified (", lib, "). Please reset IBICCFNCLUSTERLIB if necessary.",
       "Exiting.")
-    quit(1)
+    stop()
   }
   if (args$verbose)
     cat("Reading from file", conc.file, fill=TRUE)
