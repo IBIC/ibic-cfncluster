@@ -172,7 +172,13 @@ def get_best_cluster(num, length, gpu, showall=False, text=False,
 
 ## PARSE ARGUMENTS
 
-parser = argparse.ArgumentParser(description="Determine the best value for a \
+class MyParser(argparse.ArgumentParser):
+    def error(self, message):
+        sys.stderr.write('error: %s\n' % message)
+        self.print_help()
+        sys.exit(2)
+
+parser=MyParser(description="Determine the best value for a \
     given program based on execution time.")
 
 # Putting the required flag arguments into their own group stops them from
@@ -186,20 +192,11 @@ required_named.add_argument("-H", "--hours", type=int, required=True,
 required_named.add_argument("-n", "--num", type=int, required=True,
     help="How many jobs you have.", default=1)
 
-parser.add_argument("-s", "--show-all", action="store_true",
-    help="Show info for all possible clusters.")
-parser.add_argument("-S", "--show-all-only", action="store_true",
-    help="Show info for all possibly clusters only (i.e. do not show best " + \
-    "configuration")
-
 parser.add_argument("-v", "--verbose", action="store_true",
     help="Be more verbose (turns on `show all\')")
 
 parser.add_argument("-g", "--gpu", action="store_true",
     help="Don't calculate for GPU instances.")
-
-parser.add_argument("-p", "--plaintext", action="store_true",
-    help="Show results parsed into plain English.")
 
 parser.add_argument("-t", "--total", action="store_true",
     help="Show the total cost for the cheapest configuration only.")
