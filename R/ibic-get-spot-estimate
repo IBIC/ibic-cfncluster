@@ -7,14 +7,14 @@ suppressPackageStartupMessages(library(argparse))
 parser <- ArgumentParser()
 parser$add_argument("-g", "--gpu", action='store_true',
                     help="Estimate cost for gpu instances")
-parser$add_argument("--total", action='store_true',
+parser$add_argument("-t", "--total", action='store_true',
                     help=paste("Display only the total cost for the cheapest",
                     "configuration."))
-parser$add_argument("--hours",  nargs='?', default='0', type="integer",
+parser$add_argument("-H", "--hours",  nargs='?', default='0', type="integer",
                     help="Number of vcpu hours", required=TRUE)
-parser$add_argument("--num", nargs='?', default='1', type="integer",
+parser$add_argument("-n", "--num", nargs='?', default='1', type="integer",
                     help="Number of jobs", required=TRUE)
-parser$add_argument("--verbose", action='store_true',
+parser$add_argument("-v", "--verbose", action='store_true',
                     help=paste("Display more information about script."))
 
 parser$add_argument("--download", action='store_true',
