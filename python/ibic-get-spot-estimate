@@ -193,7 +193,7 @@ required_named.add_argument("-n", "--num", type=int, required=True,
     help="How many jobs you have.", default=1)
 
 parser.add_argument("-v", "--verbose", action="store_true",
-    help="Be more verbose (turns on `show all\')")
+    help="Be more verbose.")
 
 parser.add_argument("-g", "--gpu", action="store_true",
     help="Don't calculate for GPU instances.")

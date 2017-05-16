@@ -19,7 +19,7 @@ parser$add_argument("-n", "--num", nargs='?', default='0', type="integer",
 parser$add_argument("-v", "--verbose", action='store_true',
                     help=paste("Display more information about script."))
 
-parser$add_argument("--download", action='store_true',
+parser$add_argument("-d", "--download", action='store_true',
     help="Download index file.")
 
 args <- parser$parse_args()
