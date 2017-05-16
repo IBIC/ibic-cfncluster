@@ -2,17 +2,17 @@
 
 There are two programs in this project, written in Python and R respectively, designed to come up with the cheapest way for you to run neuroimaging  projects on Amazon Web Services' Elastic Compute Cloud ("in the cloud").
 
-Both do fundamentally the same thing, but just go about it slightly different ways on the backend. You can use whichever you are more comfortable with.
+Both do the same thing, but just go about it slightly different ways on the backend. You can use whichever you are more comfortable with.
 
 Each takes (at minimum) two arguments and a switch: 
 
  + The length of time (in hours) you expect your job to take on the appropriate instance class (m4/c4 vs. g2).
- + The number of jobs (brains) you have.
+ + The number of jobs you have).
  + Whether to use GPU instances or not.
 
-More information about each program can be found in their respective READMEs, but basic usage is also documented here.
+Both programs rely on the same set of flags and are called identically.
 
-Both versions rely on the same set of flags and are called identically.
+Both programs use the environment variable `IBICCFNCLUSTERLIB` to locate a file with the number of VCPUs in each instance type (`instance_concurrency`). If unspecified, this file will be located in `../lib`.
 
 ## Python
 (Trevor K. McAllister-Day)
@@ -22,10 +22,11 @@ See `https://github.com/boto/boto3`.
 
 Basic usage:
 
-    python/ibic-get-spot-estimate [--gpu] --hours HOURS --num NUM
+    ibic-get-spot-estimate [--gpu] --hours HOURS --num NUM
 
 ### Example Usage
 
+    $ cd python
     $ python/ibic-get-spot-estimate --hours 100 --num 9 
 
     instance    m4.large            
@@ -37,13 +38,12 @@ Basic usage:
     #cores      2   
 
 ## R
-(Tara Madhyastha)
 
 Usage:
 
     R/ibic-get-spot-estimate  [--gpu] --hours HOURS --num NUM
 
-The R version was also built on pulling data from Amazon live. However, this is long and time consuming (about 20 minutes, depending on how many configurations and regions you query). 
+The R version was originally written to download information about instance configuration from the web. However, this is long and time consuming (about 20 minutes, depending on how many configurations and regions you query). We changed it to use a configuration file.
 
 + `-d/--download`   Forces R to download data from the internet.
 
