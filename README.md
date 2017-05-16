@@ -41,7 +41,7 @@ Basic usage:
 
 Usage:
 
-    R/ibic-get-spot-estimate  [--gpu] --hours HOURS --num NUM
+    ibic-get-spot-estimate  [--gpu] --hours HOURS --num NUM
 
 The R version was originally written to download information about instance configuration from the web. However, this is long and time consuming (about 20 minutes, depending on how many configurations and regions you query). We changed it to use a configuration file.
 
