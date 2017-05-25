@@ -18,6 +18,15 @@ import os
 # import time functions
 from datetime import datetime, date, time, timedelta
 
+# Get lib directory from environment, or choose default if unset.
+if os.getenv("IBICCFNCLUSTERLIB") is None:
+    print("Error: Environment variable IBICCFNCLUSTERLIB is not set. See the" +
+            "readme for instructions on how to set it.")
+    sys.exit(1)
+else:
+    # Set the lib to be the environment variable.
+    LIB=os.getenv("IBICCFNCLUSTERLIB")
+
 ## SET UP FUNCTIONS
 
 instances = ['m4.large', 'm4.xlarge', 'c4.xlarge', 'c4.8xlarge',
@@ -45,13 +54,6 @@ five_days_ago = now - five_days
 
 ncpus = {}
 
-# Get lib directory from environment, or choose default if unset.
-if os.getenv("IBICCFNCLUSTERLIB") is None:
-    print("Warning: Environment variable IBICCFNCLUSTERLIB unset.\
-            Using default library (../lib).")
-    LIB="../lib/"
-else:
-    LIB=os.getenv("IBICCFNCLUSTERLIB")
 
 # Make sure instance concurrency file exists before going any farther.
 if not os.path.isfile(LIB + "/instance_concurrency"):
@@ -132,13 +134,12 @@ def spaces(this_list, tnl=False):
         print("")
 
 
-def get_best_cluster(num, length, gpu, showall=False, text=False,
-    showbest=True):
+def get_best_cluster(num, length, gpu, verbose=False):
     """Compare all possible clusters to get the cheapest one."""
 
     every = get_all_regions(gpu=gpu)
 
-    if showall and showbest:
+    if verbose:
         spaces(header)
 
     maxprice = sys.maxint
@@ -147,28 +148,20 @@ def get_best_cluster(num, length, gpu, showall=False, text=False,
 
         price = make_a_cluster(x, num, length)
 
-        if showall:
+        if verbose:
             spaces(price)
 
         if price[2] < maxprice:
             best = price
             maxprice = price[2]
 
-    if showall and showbest:
+    if verbose:
         spaces(header, tnl=True)
 
     fmt = '{:<13}{:<20}'
 
-    if showbest:
-        for h,b in zip(header, best):
-            print(fmt.format(str(h), str(b)))
-
-    if text:
-        print("You can run " + str(num) + \
-            " jobs, taking " + str(round(best[6], 4)) + \
-            " hours each on " + str(best[4]) + " " + best[0] + \
-            "-class instances in the " + best[1] + " region. " + \
-            " It will cost you $" + str(round(best[2], 5)) + ".")
+    for h,b in zip(header, best):
+        print(fmt.format(str(h), str(b)))
 
 ## PARSE ARGUMENTS
 
@@ -206,21 +199,9 @@ args = parser.parse_args()
 if args.verbose:
     print(args)
 
-# show all if -s or -S is set
-if args.show_all or args.show_all_only or args.verbose:
-    show_all = True
-else:
-    show_all = False
-
-if args.total or args.show_all_only:
-    show_best = False
-else:
-    show_best = True
-
 ## RUN CODE
 
-get_best_cluster(args.num, args.hours,
+get_best_cluster(args.num,
+    args.hours,
     gpu = args.gpu,
-    showall = show_all,
-    text = args.plaintext,
-    showbest = show_best)
+    verbose = args.verbose)
