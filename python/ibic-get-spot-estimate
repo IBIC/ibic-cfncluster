@@ -19,13 +19,13 @@ import os
 from datetime import datetime, date, time, timedelta
 
 # Get lib directory from environment, or choose default if unset.
-if os.getenv("IBICCFNCLUSTERLIB") is None:
-    print("Error: Environment variable IBICCFNCLUSTERLIB is not set. See the" +
+if os.getenv("IBICCFNCLUSTERHOME") is None:
+    print("Error: Environment variable IBICCFNCLUSTERHOME is not set. See the" +
             "readme for instructions on how to set it.")
     sys.exit(1)
 else:
     # Set the lib to be the environment variable.
-    LIB=os.getenv("IBICCFNCLUSTERLIB")
+    LIB=os.getenv("IBICCFNCLUSTERHOME") + "/lib"
 
 ## SET UP FUNCTIONS
 

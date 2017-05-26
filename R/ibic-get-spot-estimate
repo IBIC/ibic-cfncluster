@@ -1,5 +1,17 @@
 #!/usr/bin/env Rscript
 
+# First, check IBICCFNCLUSTERLIB is set
+# Check whether library is set
+if (Sys.getenv("IBICCFNCLUSTERHOME") == "")
+{
+  stop("Error: Environment variable IBICCFNCLUSTERHOME is not set. See the
+    readme for instructions on how to set it.")
+} else {
+  # Set the lib to be the environment variable.
+  lib <- paste0(Sys.getenv("IBICCFNCLUSTERHOME"), "/lib")
+}
+
+
 if (!suppressPackageStartupMessages(require(argparse)))
   install.packages("argparse")
 suppressPackageStartupMessages(library(argparse))
@@ -27,13 +39,9 @@ args <- parser$parse_args()
 if (args$hours == 0 | args$num == 0 )
 {
   parser$print_help()
-  stop("Both --hours and --num are required.")
+  stop("Both --hours and --num are required and must be greater than 0.")
 }
-else if (length(post.args==0))
-{
-  parser$print_help()
-  stop("No arguments supplied.")
-}
+
 
 total.only = args$total
 
@@ -79,32 +87,18 @@ if(args$download) {
     print(head(vcpus))
 
 } else {
-
-  print(Sys.getenv("IBICCFNCLUSTERLIB"))
-
-  # Check whether library is set
-  if (Sys.getenv("IBICCFNCLUSTERLIB") == "")
-  {
-    cat("Warning: Environment variable IBICCFNCLUSTERLIB unset.
-      Using default library.", fill=TRUE)
-    lib="../lib/"
-  } else {
-    lib=Sys.getenv("IBICCFNCLUSTERLIB")
-  }
-
   # Check if instance concurrency file exists in set lib.
-  conc.file=paste0(lib, "/instance_concurrency")
+  conc.file <- paste0(lib, "/instance_concurrency")
   if (!file.exists(conc.file))
   {
-    cat("Error: instance_concurrency file does not exist in directory",
+    stop("Error: instance_concurrency file does not exist in directory",
       "specified (", lib, "). Please reset IBICCFNCLUSTERLIB if necessary.",
       "Exiting.")
-    stop()
   }
   if (args$verbose)
     cat("Reading from file", conc.file, fill=TRUE)
 
-  vcpus <- read.table("../lib/instance_concurrency", header=TRUE)
+  vcpus <- read.table(conc.file, header=TRUE)
 }
 
 # Obtain all M4 and C4 instances
@@ -187,6 +181,7 @@ if (total.only) {
 # Clean up
 unlink(spotpricingtmpfile)
 
-if (args$download){
+if (args$download)
+{
   unlink(tmpfile)
 }

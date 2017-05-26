@@ -12,7 +12,7 @@ Each takes (at minimum) two arguments and a switch:
 
 Both programs rely on the same set of flags and are called identically.
 
-Both programs use the environment variable `IBICCFNCLUSTERLIB` to locate a file with the number of VCPUs in each instance type (`instance_concurrency`). If unspecified, this file will be located in `../lib`.
+Both programs use the environment variable `IBICCFNCLUSTERHOME` to locate a file with the number of VCPUs in each instance type (`instance_concurrency`). This file is located by default in `$IBICCFNCLUSTERHOME/lib/`.
 
 ## Python
 (Trevor K. McAllister-Day)
@@ -26,16 +26,15 @@ Basic usage:
 
 ### Example Usage
 
-    $ cd python
     $ python/ibic-get-spot-estimate --hours 100 --num 9 
 
-    instance    m4.large            
-    region      us-east-1e          
-    total-$     7.1                 
-    num         5                   
-    exec-time   100                 
-    $/hr        0.0142              
-    #cores      2   
+    instance     c4.large            
+    region       ap-south-1b         
+    total-$      8.3                 
+    num-jobs     5                   
+    exec-time    100                 
+    $/hr         0.0166              
+    #cores       2      
 
 ## R
 
@@ -51,16 +50,7 @@ The R version was originally written to download information about instance conf
 
     $ R/ibic-get-spot-estimate --hours 100 --num 9 
 
-       instancetype     region      price vcpu ninstances totalprice
-    1    c4.2xlarge us-east-1a 0.06995468    8          2 0.13990937
-    2    c4.2xlarge us-east-1b 0.07025850    8          2 0.14051700
-    ...
-    43    m4.xlarge us-east-1c 0.02970014    4          3 0.08910042
-    44    m4.xlarge us-east-1e 0.02835648    4          3 0.08506944
-    Minimum cost per instance is instancetype m4.large at price $ 0.01491771 /hr
-    Maximum cost per instance is instancetype m4.16xlarge at price $ 0.5103859 /hr
-    Minimum total cost estimate $ 0.07458855 ( 5 ) instances
-    Maximum total cost estimate $ 0.5103859 ( 1 ) instances
+ 
 
 ## Common Flags
 
@@ -80,3 +70,19 @@ Both short and long flags are available for both programs.
 
  + `-v/--verbose`   Be more verbose.
  + `-h/--help`      Display respective help menus.
+
+## Setting `IBICCFNCLUSTERHOME`
+
+In order to run either the Python or the R script, the environment variable `IBICCFNCLUSTERHOME` needs to be set. 
+
+You can set it at runtime with the command below, but this only works in that terminal for as long as you leave it open.
+
+    export IBICCFNCLUSTERHOME=/path/to/aws-home
+
+To have `IBICCFNCLUSTERHOME` persist across sessions, add the export line to your `.bashrc` file (or another file like `.bash_profile`.) This will make it so any session opened after that point will have `IBICCFNCLUSTERHOME` set.
+
+To set it for the current session, source your `.bashrc`:
+
+    source ~/.bashrc
+
+Or, if you don't want to do it yourself, you can run the script `install.sh`, which will edit your `.bashrc` (or other file) for you.
