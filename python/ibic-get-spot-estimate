@@ -29,24 +29,23 @@ else:
 
 ## SET UP FUNCTIONS
 
-instances = ['m4.large', 'm4.xlarge', 'c4.xlarge', 'c4.8xlarge',
-                 'm4.large','m4.xlarge','m4.2xlarge','m4.4xlarge',
-                    'm4.10xlarge',
-                 'c4.large', 'c4.xlarge','c4.2xlarge','c4.4xlarge',
-                     'c4.8xlarge' ]
+instances = ["m4.large", "m4.xlarge", "c4.xlarge", "c4.8xlarge",
+                 "m4.large","m4.xlarge","m4.2xlarge","m4.4xlarge",
+                    "m4.10xlarge",
+                 "c4.large", "c4.xlarge","c4.2xlarge","c4.4xlarge",
+                     "c4.8xlarge" ]
 
-gpu_instances = ['g2.2xlarge', 'g2.8xlarge']
+gpu_instances = ["g2.2xlarge", "g2.8xlarge"]
 
-regions = ['us-east-1', 'us-west-2', 'us-west-1' , 'eu-west-1', 'eu-central-1',
-           'ap-southeast-1', 'ap-northeast-1', 'ap-southeast-2',
-           'ap-northeast-2', 'ap-south-1', 'sa-east-1']
+regions = ["us-east-1", "us-west-2", "us-west-1" , "eu-west-1", "eu-central-1",
+           "ap-southeast-1", "ap-northeast-1", "ap-southeast-2",
+           "ap-northeast-2", "ap-south-1", "sa-east-1"]
 
 # us-e1 N.Virginia; us-w2 Oregon; us-w1 N. California; eu-w1 Ireland;
 # eu-c1 Frankfurt; ap-se1 Singapore; ap-ne1 tokyo, ap-se2 Sydney, ap-ne2 Seoul;
 # ap-s1 Mumbai; sa-e1 Sao Paulo
 
-header=["instance", "region", "total-$", "num-jobs", "exec-time", "$/hr",
-    "#cores"]
+header=["inst", "region\t", "total$", "#inst", "hrs", "$/hr", "#cores"]
 
 five_days = timedelta(5)
 now = datetime.now()
@@ -83,7 +82,7 @@ def get_all_in_region(region, gpu):
             InstanceTypes=all_instances,
             StartTime=five_days_ago,
             EndTime=now,
-            ProductDescriptions=['Linux/UNIX'],
+            ProductDescriptions=["Linux/UNIX"],
             #AvailabilityZone=region
         )
 
@@ -119,16 +118,19 @@ def make_a_cluster(row, num, length):
 
     total_cost = machines * length * price
 
-    return([row[0], row[2], total_cost, machines, length, price, cores])
+    #return([row[0], row[2], total_cost, machines, length, price, cores])
+    return({"inst":row[0], "region":row[2], "total$":total_cost,
+        "#inst":machines, "hrs":length, "hour$":price, "#cores": cores})
 
 
-def spaces(this_list, tnl=False):
+def spaces(this_dict, tnl=False):
     """Print the list spaces for each row.
-    It isn't the prettiest, but it works for debug output"""
+    It isn"t the prettiest, but it works for debug output"""
 
-    list_s = [str(x) for x in this_list]
-
-    print('\t'.join(list_s))
+    print("\t".join([this_dict["inst"], this_dict["region"],
+        str(this_dict["total$"]), str(this_dict["#inst"]),
+        str(this_dict["hrs"]), str(this_dict["hour$"]),
+        str(this_dict["#cores"])]))
 
     if(tnl):
         print("")
@@ -140,7 +142,7 @@ def get_best_cluster(num, length, gpu, verbose=False):
     every = get_all_regions(gpu=gpu)
 
     if verbose:
-        spaces(header)
+        print("\t".join(header))
 
     maxprice = sys.maxint
     minprice = 0
@@ -151,30 +153,30 @@ def get_best_cluster(num, length, gpu, verbose=False):
         if verbose:
             spaces(price)
 
-        if price[2] < maxprice:
+        if price["total$"] < maxprice:
             best = price
-            maxprice = price[2]
+            maxprice = price["total$"]
 
     if verbose:
-        spaces(header, tnl=True)
+        print("\t".join(header) + "\n")
 
-        ## OLD PRINTING STYLE
-        fmt = '{:<13}{:<20}'
+        for k, v in best.items():
+            print(k + "\t" + str(v))
 
-        for h,b in zip(header, best):
-            print(fmt.format(str(h), str(b)))
+        print("\n")
 
     print("Here are the results:")
-    print("Minimum cost per instance will be EC2 instance-type " + best[0] + \
-        " at price $" + str(best[5]) + "/hr.")
-    print("Minimum total cost estimate is $" + str(best[2]) + " (" + \
-        str(best[3]) + " instances).")
+    print("Minimum cost per instance will be EC2 instance-type " + \
+        best["inst"] + " in region " + best["region"] + " at price $" + \
+        str(best["hour$"]) + "/hr.\n")
+    print("Minimum total cost estimate is $" + str(best["total$"]) + " (" + \
+        str(best["#inst"]) + " instances).")
 
 ## PARSE ARGUMENTS
 
 class MyParser(argparse.ArgumentParser):
     def error(self, message):
-        sys.stderr.write('error: %s\n' % message)
+        sys.stderr.write("error: %s\n" % message)
         self.print_help()
         sys.exit(2)
 
