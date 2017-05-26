@@ -4,6 +4,7 @@
 # Check whether library is set
 if (Sys.getenv("IBICCFNCLUSTERHOME") == "")
 {
+  # If it isn't set, exit.
   stop("Error: Environment variable IBICCFNCLUSTERHOME is not set. See the
     readme for instructions on how to set it.")
 } else {
@@ -11,13 +12,12 @@ if (Sys.getenv("IBICCFNCLUSTERHOME") == "")
   lib <- paste0(Sys.getenv("IBICCFNCLUSTERHOME"), "/lib")
 }
 
-
+# Quietly load argparse library
 if (!suppressPackageStartupMessages(require(argparse)))
   install.packages("argparse")
 suppressPackageStartupMessages(library(argparse))
 
-post.args <- commandArgs(trailingOnly=TRUE)
-
+# Parse arguments
 parser <- ArgumentParser()
 parser$add_argument("-g", "--gpu", action='store_true',
                     help="Estimate cost for gpu instances")
@@ -65,7 +65,7 @@ if(args$download) {
                   destfile=tmpfile, method="wget", quiet=total.only)
     cat("   Please allow 4-5 minutes for this script to run.")
 
-      # Drop first five rows
+    # Drop first five rows
     priceinfo <- read.csv(tmpfile, skip=5)
 
     if (!gpus) {
@@ -91,12 +91,16 @@ if(args$download) {
   conc.file <- paste0(lib, "/instance_concurrency")
   if (!file.exists(conc.file))
   {
+    # If it doesn't exist, quit.
     stop("Error: instance_concurrency file does not exist in directory",
       "specified (", lib, "). Please reset IBICCFNCLUSTERLIB if necessary.",
       "Exiting.")
   }
   if (args$verbose)
+  {
+    # Update the user on progress.
     cat("Reading from file", conc.file, fill=TRUE)
+  }
 
   vcpus <- read.table(conc.file, header=TRUE)
 }
@@ -111,6 +115,7 @@ if (!gpus) {
     instances <- paste(x.subset$X1, x.subset$X2, sep=".")
 }
 
+# Let the user know when we start pulling from AWS.
 if (args$verbose)
   cat("Getting spot price history ...")
 

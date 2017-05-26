@@ -158,10 +158,17 @@ def get_best_cluster(num, length, gpu, verbose=False):
     if verbose:
         spaces(header, tnl=True)
 
-    fmt = '{:<13}{:<20}'
+        ## OLD PRINTING STYLE
+        fmt = '{:<13}{:<20}'
 
-    for h,b in zip(header, best):
-        print(fmt.format(str(h), str(b)))
+        for h,b in zip(header, best):
+            print(fmt.format(str(h), str(b)))
+
+    print("Here are the results:")
+    print("Minimum cost per instance will be EC2 instance-type " + best[0] + \
+        " at price $" + str(best[5]) + "/hr.")
+    print("Minimum total cost estimate is $" + str(best[2]) + " (" + \
+        str(best[3]) + " instances).")
 
 ## PARSE ARGUMENTS
 
