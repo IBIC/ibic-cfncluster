@@ -28,13 +28,10 @@ Basic usage:
 
     $ python/ibic-get-spot-estimate --hours 100 --num 9 
 
-    instance     c4.large            
-    region       ap-south-1b         
-    total-$      8.3                 
-    num-jobs     5                   
-    exec-time    100                 
-    $/hr         0.0166              
-    #cores       2      
+    Here are the results:
+    Minimum cost per instance will be EC2 instance-type c4.large in region ap-south-1b at price $0.0167/hr.
+    
+    Minimum total cost estimate is $8.35 (5 instances).
 
 ## R
 (Tara Madhyastha)
@@ -51,7 +48,10 @@ The R version was originally written to download information about instance conf
 
     $ R/ibic-get-spot-estimate --hours 100 --num 9 
 
- 
+    Here are the results:
+    Minimum cost per instance will be EC2 instance-type c4.large at price $ 0.01643459 /hr
+    
+    Minimum total cost estimate is $ 8.217297 ( 5 instances)
 
 ## Common Flags
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env Rscript
 
-# First, check IBICCFNCLUSTERLIB is set
-# Check whether library is set
+# First, check IBICCFNCLUSTERHOME
 if (Sys.getenv("IBICCFNCLUSTERHOME") == "")
 {
   # If it isn't set, exit.
@@ -10,6 +9,16 @@ if (Sys.getenv("IBICCFNCLUSTERHOME") == "")
 } else {
   # Set the lib to be the environment variable.
   lib <- paste0(Sys.getenv("IBICCFNCLUSTERHOME"), "/lib")
+
+    # Check if instance concurrency file exists in set lib.
+  conc.file <- paste0(lib, "/instance_concurrency")
+  if (!file.exists(conc.file))
+  {
+    # If it doesn't exist, quit.
+    stop("Error: instance_concurrency file does not exist in directory",
+      "specified (", lib, "). Please reset IBICCFNCLUSTERLIB if necessary.",
+      "Exiting.")
+  }
 }
 
 # Quietly load argparse library
@@ -21,9 +30,6 @@ suppressPackageStartupMessages(library(argparse))
 parser <- ArgumentParser()
 parser$add_argument("-g", "--gpu", action='store_true',
                     help="Estimate cost for gpu instances")
-parser$add_argument("-t", "--total", action='store_true',
-                    help=paste("Display only the total cost for the cheapest",
-                    "configuration."))
 parser$add_argument("-H", "--hours",  nargs='?', default='0', type="integer",
                     help="Number of vcpu hours")
 parser$add_argument("-n", "--num", nargs='?', default='0', type="integer",
@@ -36,25 +42,23 @@ parser$add_argument("-d", "--download", action='store_true',
 
 args <- parser$parse_args()
 
-if (args$hours == 0 | args$num == 0 )
+# Make sure that both hours and num input are > 0
+if (args$hours <= 0 | args$num <= 0 )
 {
   parser$print_help()
   stop("Both --hours and --num are required and must be greater than 0.")
 }
-
-
-total.only = args$total
 
 # Define AWS regions
 regions <- c("us-east-1", "us-west-2", "us-west-1" , "eu-west-1",
             "eu-central-1", "ap-southeast-1", "ap-northeast-1",
             "ap-southeast-2", "ap-northeast-2", "ap-south-1", "sa-east-1")
 
-# Price out cheapest GPUs if flag is given
-gpus=args$gpu
-
+# Shorten variables
+gpus <- args$gpu
 totalhours <- args$hours
 num <- args$num
+verbose <- args$verbose
 
 # Download AWS pricing to obtain vcpu list
 if(args$download) {
@@ -62,7 +66,7 @@ if(args$download) {
     tmpfile=tempfile()
     download.file(paste0("https://pricing.us-east-1.amazonaws.com/offers/v1.0/",
                           "aws/AmazonEC2/current/index.csv"),
-                  destfile=tmpfile, method="wget", quiet=total.only)
+                  destfile=tmpfile, method="wget", quiet=!verbose)
     cat("   Please allow 4-5 minutes for this script to run.")
 
     # Drop first five rows
@@ -71,10 +75,6 @@ if(args$download) {
     if (!gpus) {
         priceinfo <- data.frame(priceinfo$Instance.Type, priceinfo$vCPU)
         colnames(priceinfo) <- c("instancetype", "vcpu")
-        # vcpus <- aggregate(priceinfo$vcpu, by=list(priceinfo$instancetype),
-        #                    FUN=mean)
-        # colnames(vcpus) <- c("instancetype", "vcpu")
-        vcpus <- priceinfo
     } else {
         # if we are looking at gpus, we need the count of GPUs and not the vcpus
         priceinfo <- data.frame(priceinfo$Instance.Type, priceinfo$GPU)
@@ -87,16 +87,7 @@ if(args$download) {
     print(head(vcpus))
 
 } else {
-  # Check if instance concurrency file exists in set lib.
-  conc.file <- paste0(lib, "/instance_concurrency")
-  if (!file.exists(conc.file))
-  {
-    # If it doesn't exist, quit.
-    stop("Error: instance_concurrency file does not exist in directory",
-      "specified (", lib, "). Please reset IBICCFNCLUSTERLIB if necessary.",
-      "Exiting.")
-  }
-  if (args$verbose)
+  if (verbose)
   {
     # Update the user on progress.
     cat("Reading from file", conc.file, fill=TRUE)
@@ -116,72 +107,65 @@ if (!gpus) {
 }
 
 # Let the user know when we start pulling from AWS.
-if (args$verbose)
+if (verbose)
   cat("Getting spot price history ...")
 
 # Get spot price history using instances identified
 spotpricingtmpfile=tempfile()
+
+# Get start and end time for search range
 endtime <- Sys.time()
-# Subtract 7 days
 starttime <- Sys.time() - 7*60*60*24
 
-if (args$verbose)
+if (verbose)
   cat(paste("# regions:", length(regions)), fill=TRUE)
 
+cat("Estimate", 1.75*length(regions), "minutes for execution.", fill=TRUE)
+
+# Loop over every region and execute command
 for (region in regions) {
-    if (args$verbose)
+    if (verbose)
       cat(paste("Working on region", region), fill=TRUE)
 
     command <- paste0("aws --region ",
                      region,
                      " --output text ec2 describe-spot-price-history ",
                      " --instance-types ", paste(instances, collapse=" "),
-                     " --start-time '", starttime,
-                     "' --end-time '", endtime, "' ",
-                     "--product-descriptions Linux/UNIX >> ",
+                     " --start-time '", starttime, "'",
+                     " --end-time '", endtime, "'",
+                     " --product-descriptions Linux/UNIX >> ",
                      spotpricingtmpfile)
 
-    # if (args$verbose)
-    #   cat(command, fill=TRUE)
-
+    #Execute command externally
     system(command)
 }
 
-dat <-read.table(spotpricingtmpfile)
+# Get data and organize by region and instance type
+dat <- read.table(spotpricingtmpfile)
 dat <- data.frame(dat$V2, dat$V3, dat$V5)
 colnames(dat) <- c("region", "instancetype", "price")
 tab <- aggregate(dat$price, by=list(dat$region, dat$instancetype), FUN=mean)
 colnames(tab) <- c("region", "instancetype", "price")
 
-if (args$verbose)
+if (verbose)
   cat("Merge vcpu with spot pricing ...")
 
 # Merge vcpu with spot pricing
 merged <- merge(tab, vcpus, by="instancetype")
-merged$ninstances <- ceiling(num / merged$vcpu)
+merged$ninstances <- ceiling(num / merged$vcpu) # make sure to round up
 merged$hours <- totalhours
 merged$totalprice <- merged$price * merged$ninstances * merged$hours
 
+# Find the cheapest instance
 minimum <- which.min(merged$totalprice)
 minimum.instancetype <- levels(merged$instancetype)[
   merged[minimum, ]$instancetype]
 
-maximum <- which.max(merged$totalprice)
-maximum.instancetype <- levels(merged$instancetype)[
-  merged[maximum, ]$instancetype]
+# Display the results
+cat("\nHere are the results:")
+cat("\nMinimum cost per instance will be EC2 instance-type",
+  minimum.instancetype, "at price $", merged$price[minimum], "/hr\n")
 
-if (!total.only) {
-  cat("\nHere are the results:")
-  cat("\nMinimum cost per instance will be EC2 instance-type",
-      minimum.instancetype, "at price $", merged$price[minimum], "/hr\n")
-}
-if (totalhours > 0 && !total.only)  {
-  cat("\nMinimum total cost estimate is $", merged$totalprice[minimum],
-      "(for", merged$ninstances[minimum], "instances)\n")
-}
-if (total.only) {
-  cat(merged$totalprice[minimum], fill=TRUE)
-}
 
 # Clean up
 unlink(spotpricingtmpfile)

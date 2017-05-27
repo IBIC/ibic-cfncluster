@@ -5,7 +5,7 @@
 from __future__ import division, print_function
 
 
-## IMPORT COMMANDS
+# Import libraries
 
 import argparse
 import boto3
@@ -18,7 +18,7 @@ import os
 # import time functions
 from datetime import datetime, date, time, timedelta
 
-# Get lib directory from environment, or choose default if unset.
+# Get lib directory from environment, or exit if it isn't set
 if os.getenv("IBICCFNCLUSTERHOME") is None:
     print("Error: Environment variable IBICCFNCLUSTERHOME is not set. See the" +
             "readme for instructions on how to set it.")
@@ -27,16 +27,23 @@ else:
     # Set the lib to be the environment variable.
     LIB=os.getenv("IBICCFNCLUSTERHOME") + "/lib"
 
-## SET UP FUNCTIONS
+    # Make sure instance concurrency file exists before going any farther.
+    if not os.path.isfile(LIB + "/instance_concurrency"):
+        print("instance_concurrency file does not exist in library specified" +
+            "(" + LIB + "). Please reset IBICCFNCLUSTERLIB if necessary.")
+        sys.exit(1)
 
+# All non-gpu instance types we search
 instances = ["m4.large", "m4.xlarge", "c4.xlarge", "c4.8xlarge",
                  "m4.large","m4.xlarge","m4.2xlarge","m4.4xlarge",
                     "m4.10xlarge",
                  "c4.large", "c4.xlarge","c4.2xlarge","c4.4xlarge",
                      "c4.8xlarge" ]
 
+# GPU instances available
 gpu_instances = ["g2.2xlarge", "g2.8xlarge"]
 
+# Regions to search
 regions = ["us-east-1", "us-west-2", "us-west-1" , "eu-west-1", "eu-central-1",
            "ap-southeast-1", "ap-northeast-1", "ap-southeast-2",
            "ap-northeast-2", "ap-south-1", "sa-east-1"]
@@ -45,23 +52,19 @@ regions = ["us-east-1", "us-west-2", "us-west-1" , "eu-west-1", "eu-central-1",
 # eu-c1 Frankfurt; ap-se1 Singapore; ap-ne1 tokyo, ap-se2 Sydney, ap-ne2 Seoul;
 # ap-s1 Mumbai; sa-e1 Sao Paulo
 
+# For verbose display
 header=["inst", "region\t", "total$", "#inst", "hrs", "$/hr", "#cores"]
 
+# Get an object representing five days ago.
 five_days = timedelta(5)
 now = datetime.now()
 five_days_ago = now - five_days
 
 ncpus = {}
 
-
-# Make sure instance concurrency file exists before going any farther.
-if not os.path.isfile(LIB + "/instance_concurrency"):
-    print("instance_concurrency file does not exist in library specified (" +
-        LIB + "). Please reset IBICCFNCLUSTERLIB if necessary.")
-    sys.exit(1)
-
+# Read instance concurrency file.
 with open(LIB + "/instance_concurrency") as f:
-    # skip header line (for R)
+    # skip header line (which is included for R)
     next(f)
 
     # read in data
@@ -69,21 +72,25 @@ with open(LIB + "/instance_concurrency") as f:
        (key, val) = line.split(None)
        ncpus[key] = int(val)
 
+# This gets all the prices for a single region.
 def get_all_in_region(region, gpu):
     """Get the price of every instance in a single region."""
 
+    # Select which instances to search. There's no point in doing both,
+    ## the GPU instances are too expensive if they aren't used, and the non-GPU
+    ## instances are pointless to investigate if it's not a GPU-enabled program.
     if gpu:
         all_instances = gpu_instances
     else:
         all_instances = instances
 
+    # Initiate the boto client in a specific region
     client = boto3.client("ec2", region)
     response = client.describe_spot_price_history(
             InstanceTypes=all_instances,
             StartTime=five_days_ago,
             EndTime=now,
             ProductDescriptions=["Linux/UNIX"],
-            #AvailabilityZone=region
         )
 
     prices = np.empty([0, 3])
@@ -95,8 +102,10 @@ def get_all_in_region(region, gpu):
             item["AvailabilityZone"]]])
         prices = np.append(prices, mat, axis=0)
 
+    # This returns a matrix with the columns [instance, $/hr, region]
     return(prices)
 
+# This wraps get_all_in_region() and iterates over all the regions.
 def get_all_regions(gpu):
     """Iterate over all given regions."""
 
@@ -106,15 +115,17 @@ def get_all_regions(gpu):
         mat = get_all_in_region(r, gpu)
         all_prices = np.append(all_prices, mat, axis=0)
 
+    # This returns a matrix with the columns [instance, $/hr, region], except
+    ## for all regions.
     return(all_prices)
 
-
+# For a given instance type, calculate the price and stuff of a cluster.
 def make_a_cluster(row, num, length):
     """Make a cluster based on how many jobs there are"""
 
     cores = ncpus[row[0]]
     price = float(row[1])
-    machines = int(math.ceil(num / cores))
+    machines = int(math.ceil(num / cores)) # Round up so there's enough cores.
 
     total_cost = machines * length * price
 
@@ -122,8 +133,8 @@ def make_a_cluster(row, num, length):
     return({"inst":row[0], "region":row[2], "total$":total_cost,
         "#inst":machines, "hrs":length, "hour$":price, "#cores": cores})
 
-
-def spaces(this_dict, tnl=False):
+# Print the information for verbose output
+def spaces(this_dict):
     """Print the list spaces for each row.
     It isn"t the prettiest, but it works for debug output"""
 
@@ -132,11 +143,8 @@ def spaces(this_dict, tnl=False):
         str(this_dict["hrs"]), str(this_dict["hour$"]),
         str(this_dict["#cores"])]))
 
-    if(tnl):
-        print("")
-
-
-def get_best_cluster(num, length, gpu, verbose=False):
+# Compare all clusters
+def get_best_cluster(num, length, gpu):
     """Compare all possible clusters to get the cheapest one."""
 
     every = get_all_regions(gpu=gpu)
@@ -144,18 +152,27 @@ def get_best_cluster(num, length, gpu, verbose=False):
     if verbose:
         print("\t".join(header))
 
+    # Start the max price out high.
     maxprice = sys.maxint
-    minprice = 0
     for x in every:
 
+        # Get the cluster
         price = make_a_cluster(x, num, length)
 
+        # If verbose is on, print a summary.
         if verbose:
             spaces(price)
 
+        # If it's cheaper than the last cheapest cluster, save it as best.
         if price["total$"] < maxprice:
             best = price
             maxprice = price["total$"]
+
+    return(best)
+
+# Takes the output of get_bet_cluster() and parses it for the user.
+def print_best_cluster(best):
+    """Format and display the best cluster."""
 
     if verbose:
         print("\t".join(header) + "\n")
@@ -200,17 +217,20 @@ parser.add_argument("-v", "--verbose", action="store_true",
 parser.add_argument("-g", "--gpu", action="store_true",
     help="Don't calculate for GPU instances.")
 
-parser.add_argument("-t", "--total", action="store_true",
-    help="Show the total cost for the cheapest configuration only.")
-
 args = parser.parse_args()
 
-if args.verbose:
+# Make verbosity setting global
+verbose = args.verbose
+
+if verbose:
     print(args)
 
 ## RUN CODE
 
-get_best_cluster(args.num,
+# Choose the best cluster
+best_cluster = get_best_cluster(args.num,
     args.hours,
-    gpu = args.gpu,
-    verbose = args.verbose)
+    gpu = args.gpu)
+
+# Print that cluster.
+print_best_cluster(best_cluster)
