@@ -205,17 +205,15 @@ parser=MyParser(description="Determine the best value for a \
 required_named = parser.add_argument_group("required named arguments")
 
 required_named.add_argument("-H", "--hours", type=int, required=True,
-    help="Job execution time, on one brain in hours on a neuron-class " + \
-    "machine (adrc, tpp, panuc), single-threaded. -H to not conflict with " + \
-    "help.")
+    help="Number of vcpu hours")
 required_named.add_argument("-n", "--num", type=int, required=True,
-    help="How many jobs you have.", default=1)
+    help="Number of jobs", default=1)
 
 parser.add_argument("-v", "--verbose", action="store_true",
-    help="Be more verbose.")
+    help="Display more information about script")
 
 parser.add_argument("-g", "--gpu", action="store_true",
-    help="Don't calculate for GPU instances.")
+    help="Estimate cost for GPU instances")
 
 args = parser.parse_args()
 

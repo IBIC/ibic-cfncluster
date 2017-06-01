@@ -29,7 +29,7 @@ suppressPackageStartupMessages(library(argparse))
 # Parse arguments
 parser <- ArgumentParser()
 parser$add_argument("-g", "--gpu", action='store_true',
-                    help="Estimate cost for gpu instances")
+                    help="Estimate cost for GPU instances")
 parser$add_argument("-H", "--hours",  nargs='?', default='0', type="integer",
                     help="Number of vcpu hours")
 parser$add_argument("-n", "--num", nargs='?', default='0', type="integer",

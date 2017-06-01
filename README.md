@@ -1,8 +1,8 @@
-# AWS-Estimator
+# IBIC CfnCluster
 
 There are two programs in this project, written in Python and R respectively, designed to come up with the cheapest way for you to run neuroimaging  projects on Amazon Web Services' Elastic Compute Cloud ("in the cloud").
 
-Both do the same thing, but just go about it slightly different ways on the backend. You can use whichever you are more comfortable with.
+Both do the same thing, but the Python version uses the boto interface, and the R version uses the aws command line interface. You can use whichever you prefer and whichever works on your system.
 
 Each takes (at minimum) two arguments and a switch: 
 
@@ -12,7 +12,21 @@ Each takes (at minimum) two arguments and a switch:
 
 Both programs rely on the same set of flags and are called identically.
 
-Both programs use the environment variable `IBICCFNCLUSTERHOME` to locate a file with the number of VCPUs in each instance type (`instance_concurrency`). This file is located by default in `$IBICCFNCLUSTERHOME/lib/`.
+Both programs use the environment variable `IBICCFNCLUSTERHOME` to locate a file with the number of VCPUs in each instance type (`instance_concurrency`). `IBICCFNCLUSTERHOME` should be set to the name of the directory in which this project is installed (e.g., `~/ibic-cfncluster`, if you have cloned the repository to your home directory). The `instance_concurrency` file is located by default in `$IBICCFNCLUSTERHOME/lib/`.
+
+## Setting `IBICCFNCLUSTERHOME`
+
+To run either the Python or the R script, the environment variable `IBICCFNCLUSTERHOME` needs to be set. 
+
+You can set it at runtime with the command below, but this only works in that terminal for as long as you leave it open. Assuming you are running `bash`:
+
+    export IBICCFNCLUSTERHOME=~/ibic-cfncluster
+
+To have `IBICCFNCLUSTERHOME` persist across sessions, add the export line to your `.bashrc` file (or another file like `.bash_profile`.) Any new session will have `IBICCFNCLUSTERHOME` set.
+
+To set it for the current session, source your `.bashrc`:
+
+    source ~/.bashrc
 
 ## Python
 (Trevor K. McAllister-Day)
@@ -34,13 +48,12 @@ Basic usage:
     Minimum total cost estimate is $8.35 (5 instances).
 
 ## R
-(Tara Madhyastha)
 
 Usage:
 
     ibic-get-spot-estimate  [--gpu] --hours HOURS --num NUM
 
-The R version was originally written to download information about instance configuration from the web. However, this is long and time consuming (about 20 minutes, depending on how many configurations and regions you query). We changed it to use a configuration file.
+The R version was originally written to download information about instance configuration from the web. However, this is long and time consuming (about 20 minutes, depending on how many configurations and regions you query). We changed it to use the same configuration file as the python version.
 
 + `-d/--download`   Forces R to download data from the internet.
 
@@ -72,18 +85,3 @@ Both short and long flags are available for both programs.
  + `-v/--verbose`   Be more verbose.
  + `-h/--help`      Display respective help menus.
 
-## Setting `IBICCFNCLUSTERHOME`
-
-In order to run either the Python or the R script, the environment variable `IBICCFNCLUSTERHOME` needs to be set. 
-
-You can set it at runtime with the command below, but this only works in that terminal for as long as you leave it open.
-
-    export IBICCFNCLUSTERHOME=/path/to/aws-home
-
-To have `IBICCFNCLUSTERHOME` persist across sessions, add the export line to your `.bashrc` file (or another file like `.bash_profile`.) This will make it so any session opened after that point will have `IBICCFNCLUSTERHOME` set.
-
-To set it for the current session, source your `.bashrc`:
-
-    source ~/.bashrc
-
-Or, if you don't want to do it yourself, you can run the script `install.sh`, which will edit your `.bashrc` (or other file) for you.
