@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# check for arguments
+if [ $# -ne 1 ]
+then
+echo "usage: install_s3_scripts s3-bucket"
+exit 1
+else
+bucket=$1
+fi
+
+# check that the environment variable is set
+if [ ! -n "$IBICCFNCLUSTERHOME" ]
+then
+    echo "Error: Environment variable IBICCFNCLUSTERHOME is not set. See the readme for instructions on how to set it."
+    exit 1
+fi
+
+# modify the scripts to replace the bucket placeholder string with the actual
+# s3 bucket
+sed 's/BUCKET/'${bucket}'/g' $IBICCFNCLUSTERHOME/lib/templatescripts/install_fsl_template.sh > $IBICCFNCLUSTERHOME/bin/install_fsl.sh
+
+sed 's/BUCKET/'${bucket}'/g' $IBICCFNCLUSTERHOME/lib/templatescripts/install_freesurfer_template.sh > $IBICCFNCLUSTERHOME/bin/install_freesurfer.sh 
+
+# copy modified scripts to s3
+aws s3 cp $IBICCFNCLUSTERHOME/bin/install_freesurfer.sh s3://${bucket}/install_freesurfer.sh
+
+aws s3 cp $IBICCFNCLUSTERHOME/bin/install_fsl.sh s3://${bucket}/install_fsl.sh
