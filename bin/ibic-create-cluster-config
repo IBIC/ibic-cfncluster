@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+import argparse
+import subprocess
+
+parser= argparse.ArgumentParser(description="Create a custom cluster configuration file")
+
+arguments=parser.add_argument_group("named arguments")
+
+arguments.add_argument("-i", "--instancetype", type=str, required=True,help="Instance type")
+
+arguments.add_argument("-k", "--keypair", type=str, required=True,help="AWS Keypair")
+
+arguments.add_argument("-r", "--regionname", type=str, required=False,help="AWS region name")
+
+arguments.add_argument("-b", "--bucketname", type=str, required=True,help="S3 bucket name")
+
+arguments.add_argument("-s", "--spotprice", type=str, required=True,help="spot price bid (in dollars)")
+
+arguments.add_argument("-o", "--output", type=str, required=False,help="output configuration file name")
+
+
+# If output file is unspecified, use "config" in current working directory
+if args.output is None:
+   args.output = "config"
+
+if args.regionname is None:
+   p=subprocess.Popen("aws configure get region", stdout=subprocess.PIPE,shell=True)
+   (regionoutput,err)=p.communicate()
+   if len(regionoutput)==0:
+      print nothing
+   else:
+      args.regionname = regionoutput
+
+
+cf = open(args.output, 'w')
+
+output = """[aws]
+aws_region_name = %s
+
+[cluster fsl]
+vpc_settings = public
+key_name = %s
+post_install = https://%s.s3.amazonaws.com/install_fsl.sh
+master_root_volume_size=20
+compute_root_volume_size=20
+initial_queue_size=1
+maintain_initial_size=false
+compute_instance_type=%s
+master_instance_type=m4.large
+cluster_type=spot
+spot_price=%s
+
+[cluster gpu]
+vpc_settings = public
+key_name = %s
+post_install = https://%s.s3.amazonaws.com/install_fsl.sh
+initial_queue_size=1
+maintain_initial_size=false
+cluster_type=spot
+spot_price=%s
+compute_instance_type=%s
+extra_json = { "cfncluster" : { "cfn_scheduler_slots": "1" } }
+
+
+[global]
+update_check = true
+sanity_check = true
+cluster_template = default
+""" % (args.regionname, args.keypair,args.bucketname, args.instancetype, args.spotprice, args.keypair, args.bucketname, args.spotprice args.instancetype)
+
+cf.write(output)
+cf.close()
+
+
+
